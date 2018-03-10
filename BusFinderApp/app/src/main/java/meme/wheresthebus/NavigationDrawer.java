@@ -19,11 +19,17 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
 
 public class NavigationDrawer extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
+
+    private GoogleMap gmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,11 +51,20 @@ public class NavigationDrawer extends AppCompatActivity
     }
 
     private void showMap(){
-        Fragment map = MapFragment.newInstance();
+        MapFragment map = MapFragment.newInstance();
         FragmentTransaction fragmentTransaction =
                 getFragmentManager().beginTransaction();
         fragmentTransaction.add(R.id.page, map);
         fragmentTransaction.commit();
+        map.getMapAsync(this);
+
+        //getLimits();
+    }
+
+    public void getLimits(){
+        CameraPosition cp = gmap.getCameraPosition();
+        LatLng position = cp.target;
+        System.out.println(position.latitude + " " + position.longitude);
     }
 
     @Override
@@ -86,10 +101,7 @@ public class NavigationDrawer extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_map) {
-            // Handle the map
-            //showMap();
-            Intent myIntent = new Intent(NavigationDrawer.this, MapsActivity.class);
-            NavigationDrawer.this.startActivity(myIntent);
+            getLimits();
         } else if (id == R.id.nav_settings) {
 
         } else if (id == R.id.nav_share) {
@@ -113,5 +125,10 @@ public class NavigationDrawer extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        gmap = googleMap;
     }
 }
