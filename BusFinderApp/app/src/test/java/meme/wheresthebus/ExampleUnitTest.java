@@ -1,4 +1,4 @@
-package com.example.costin.busfinder;
+package meme.wheresthebus;
 
 import org.junit.Test;
 
