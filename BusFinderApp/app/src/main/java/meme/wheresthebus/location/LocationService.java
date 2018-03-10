@@ -1,4 +1,4 @@
-package meme.wheresthebus.comms;
+package meme.wheresthebus.location;
 
 /**
  * Created by costin on 10/03/2018.
