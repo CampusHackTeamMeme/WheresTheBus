@@ -40,9 +40,9 @@ class busStops(Resource):
                 query = c.execute(
                     '''SELECT service FROM routes WHERE
                     route_id = ?
-                    ''', (route_id,))
+                    ''', (route_id[0],))
 
-                busRoutes.append(query.fetchall()[0])
+                busRoutes.append(query.fetchall()[0][0])
 
             stop['busRoutes'] = busRoutes
 
