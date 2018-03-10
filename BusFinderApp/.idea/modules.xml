@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/BusFinderApp.iml" filepath="$PROJECT_DIR$/BusFinderApp.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://C:\Users\lppea\Documents\GitHub\WheresTheBus\BusFinderApp\app\app.iml" filepath="C:\Users\lppea\Documents\GitHub\WheresTheBus\BusFinderApp\app\app.iml" />
     </modules>
   </component>
 </project>
