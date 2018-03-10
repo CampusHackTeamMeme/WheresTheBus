@@ -1,8 +1,14 @@
 package meme.wheresthebus;
 
+import android.app.Fragment;
+import android.app.FragmentTransaction;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -13,8 +19,17 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+
 public class NavigationDrawer extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
+
+    private GoogleMap gmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +46,25 @@ public class NavigationDrawer extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        showMap();
+    }
+
+    private void showMap(){
+        MapFragment map = MapFragment.newInstance();
+        FragmentTransaction fragmentTransaction =
+                getFragmentManager().beginTransaction();
+        fragmentTransaction.add(R.id.page, map);
+        fragmentTransaction.commit();
+        map.getMapAsync(this);
+
+        //getLimits();
+    }
+
+    public void getLimits(){
+        CameraPosition cp = gmap.getCameraPosition();
+        LatLng position = cp.target;
+        System.out.println(position.latitude + " " + position.longitude);
     }
 
     @Override
@@ -67,17 +101,34 @@ public class NavigationDrawer extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_map) {
-            // Handle the camera action
+            getLimits();
         } else if (id == R.id.nav_settings) {
 
         } else if (id == R.id.nav_share) {
+            try {
+                Intent i = new Intent(Intent.ACTION_SEND);
+                i.setType("text/plain");
+                i.putExtra(Intent.EXTRA_SUBJECT, "Where's the bus?");
+                String sAux = "\nLet me recommend you this super cool app\n\n";
+                sAux = sAux + "https://github.com/CampusHackTeamMeme/WheresTheBus/ \n\n";
+                i.putExtra(Intent.EXTRA_TEXT, sAux);
+                startActivity(Intent.createChooser(i, "choose one"));
+            } catch(Exception e) {
+                //e.toString();
+            }
 
         } else if (id == R.id.nav_send) {
-
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/CampusHackTeamMeme/WheresTheBus/issues/new"));
+            startActivity(browserIntent);
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        gmap = googleMap;
     }
 }

@@ -3,38 +3,26 @@ from flask import request
 import sqlite3 as sql
 from werkzeug.datastructures import ImmutableMultiDict
 
-class busStops(Resource):
+class routeInfo(Resource):
     def __init__(self, file):
         self.DBfile = file
 
     def get(self):
-        r = request.form.to_dict()
+        r = request.form.to_dict(flat=False)
         print(r)
 
         conn = sql.connect(self.DBfile)
         c = conn.cursor()
 
-        stopsquery = c.execute(
-            '''SELECT * FROM stops WHERE 
-            lon > ? AND 
-            lon < ? AND 
-            lat > ? AND 
-            lat < ? '''
-            ,(float(r['startLon']), 
-              float(r['endLon']),
-              float(r['startLat']), 
-              float(r['endLat'])))
+        toSend = {}
 
-        keys = ('stop_id', 'name', 'lat', 'lon')
-        toSend = { 'data': [dict( zip(keys, i) ) for i in stopsquery.fetchall()]}
-
-        for stop in toSend['data']:
+        for stops in r['stops']:
             busRoutes = []
-
+        
             Routesquery = c.execute(
                 '''SELECT route_id FROM routes_stops WHERE
                 stop_id = ?''',
-                (stop['stop_id'],))
+                (stops,))
 
             for route_id in Routesquery.fetchall():
                 query = c.execute(
@@ -44,6 +32,6 @@ class busStops(Resource):
 
                 busRoutes.append(query.fetchall()[0])
 
-            stop['busRoutes'] = busRoutes
+            toSend[stops] = busRoutes
 
         return toSend, 200

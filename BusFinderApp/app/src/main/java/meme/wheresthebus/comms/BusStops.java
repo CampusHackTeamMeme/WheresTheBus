@@ -24,12 +24,12 @@ public class BusStops {
 
     }
 
-    public ArrayDeque<BusStop> getStops(double startX, double startY, double endX, double endY){
+    public ArrayDeque<BusStop> getStops(double startLon, double startLat, double endLon, double endLat){
         try {
-            JSONObject request = new JSONObject().put("startX", startX)
-                    .put("startY", startY)
-                    .put("endX", endX)
-                    .put("endY", endY);
+            JSONObject request = new JSONObject().put("startLat", startLat)
+                    .put("startLon", startLon)
+                    .put("endLat", endLat)
+                    .put("endLon", endLon);
 
             return executeBusStopRequest(request);
 
@@ -38,7 +38,7 @@ public class BusStops {
         }
     }
 
-    public ArrayDeque<BusStop> executeBusStopRequest(JSONObject json){
+    private ArrayDeque<BusStop> executeBusStopRequest(JSONObject json){
         try {
             URL busStopServer = new URL(busStopServerURL);
             URLConnection connection = busStopServer.openConnection();
@@ -63,7 +63,7 @@ public class BusStops {
             for(int i=0; i < response.length(); i++){
                 JSONObject stopAsJSON = response.getJSONObject(i);
                 BusStop stop = new BusStop(stopAsJSON.getString("name"),
-                        stopAsJSON.getString("description"),
+                        stopAsJSON.getString("desc"),
                         stopAsJSON.getDouble("x"),
                         stopAsJSON.getDouble("y"));
                 stops.add(stop);
