@@ -1,1 +1,3 @@
-asyncpg
+sqlite3
+flask_restful
+flask
