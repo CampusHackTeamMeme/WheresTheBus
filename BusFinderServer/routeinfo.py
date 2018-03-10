@@ -8,7 +8,7 @@ class routeInfo(Resource):
         self.DBfile = file
 
     def get(self):
-        r = request.form.to_dict()
+        r = request.form.to_dict(flat=False)
         print(r)
 
         conn = sql.connect(self.DBfile)
@@ -20,7 +20,7 @@ class routeInfo(Resource):
             busRoutes = []
         
             Routesquery = c.execute(
-                '''SELECT route_id FROM routes-stops WHERE
+                '''SELECT route_id FROM routes_stops WHERE
                 stop_id = ?''',
                 (stops,))
 
