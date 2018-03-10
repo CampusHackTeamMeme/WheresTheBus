@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayDeque;
+import java.util.Iterator;
 import java.util.Scanner;
 
 /**
@@ -23,7 +24,7 @@ public class BusStops {
 
     }
 
-    public ArrayDeque<BusStop> getStops(Float startX, Float startY, Float endX, Float endY){
+    public ArrayDeque<BusStop> getStops(double startX, double startY, double endX, double endY){
         try {
             JSONObject request = new JSONObject().put("startX", startX)
                     .put("startY", startY)
@@ -41,6 +42,13 @@ public class BusStops {
         try {
             URL busStopServer = new URL(busStopServerURL);
             URLConnection connection = busStopServer.openConnection();
+            Iterator<String> itr = json.keys();
+
+            while(itr.hasNext()){
+                String currentKey = itr.next();
+                connection.addRequestProperty(currentKey, json.get(currentKey).toString());
+            }
+
             Scanner scanner = new Scanner(new InputStreamReader(connection.getInputStream()));
             StringBuilder contents = new StringBuilder();
 
