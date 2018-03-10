@@ -35,7 +35,7 @@ import java.util.concurrent.ExecutionException;
 import meme.wheresthebus.comms.BusStops;
 
 public class NavigationDrawer extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
+        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
 
     private GoogleMap gmap;
 
@@ -65,8 +65,6 @@ public class NavigationDrawer extends AppCompatActivity
         fragmentTransaction.add(R.id.page, map);
         fragmentTransaction.commit();
         map.getMapAsync(this);
-
-        //getLimits();
     }
 
     public void getLimits(){
@@ -111,6 +109,7 @@ public class NavigationDrawer extends AppCompatActivity
         if (id == R.id.nav_map) {
             getLimits();
         } else if (id == R.id.nav_settings) {
+            addBusStops();
 
         } else if (id == R.id.nav_share) {
             try {
@@ -140,7 +139,7 @@ public class NavigationDrawer extends AppCompatActivity
         gmap = googleMap;
 
         setMapCameraToSoton(gmap);
-        addBusStops(gmap);
+        gmap.setOnMapLoadedCallback(this);
     }
 
     public void setMapCameraToSoton(GoogleMap gmap){
@@ -149,7 +148,7 @@ public class NavigationDrawer extends AppCompatActivity
         gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(soton, 13));
     }
 
-    public void addBusStops(GoogleMap gmap){
+    public void addBusStops(){
         final LatLng position = gmap.getCameraPosition().target;
         float zoom = gmap.getCameraPosition().zoom;
         this.runOnUiThread(() -> addStopsAsync(gmap, position, zoom));
@@ -164,5 +163,10 @@ public class NavigationDrawer extends AppCompatActivity
         } catch (ExecutionException | InterruptedException e){
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void onMapLoaded() {
+        addBusStops();
     }
 }
