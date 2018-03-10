@@ -8,9 +8,9 @@ class busStops(Resource):
         self.DBfile = file
 
     def get(self):
-        r = request.form.to_dict(flat=False)
+        r = request.form.to_dict()
         print(r)
-        
+
         conn = sql.connect(self.DBfile)
         c = conn.cursor()
 
@@ -19,8 +19,11 @@ class busStops(Resource):
             lon > ? AND 
             lon < ? AND 
             lat > ? AND 
-            lat < ? ''',
-            (r['startLon'], r['endLon'], r['startLat'], r['endLat']))
+            lat < ? '''
+            ,(float(r['startLon']), 
+              float(r['endLon']),
+              float(r['startLat']), 
+              float(r['endLat'])))
 
         keys = ('stop_id', 'name', 'lat', 'lon')
         toSend = { 'data': [dict( zip(keys, i) ) for i in stopsquery.fetchall()]}
