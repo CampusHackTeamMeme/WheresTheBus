@@ -33,9 +33,9 @@ def create_stops_and_routes(conn):
         desc TEXT,
         operator TEXT,
         direction TEXT,
-        service TEXT
+        service TEXT,
         FOREIGN KEY (operator) REFERENCES operators(operator_id)
-          ON DELETE CASCADE ON UPDATE NO ACTION,
+          ON DELETE CASCADE ON UPDATE NO ACTION
     )''')
     c.execute('''
     CREATE TABLE routes_stops(
