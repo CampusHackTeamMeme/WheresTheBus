@@ -41,7 +41,6 @@ public class BusStops {
         try {
             URL busStopServer = new URL(busStopServerURL);
             URLConnection connection = busStopServer.openConnection();
-            connection.
             Scanner scanner = new Scanner(new InputStreamReader(connection.getInputStream()));
             StringBuilder contents = new StringBuilder();
 
