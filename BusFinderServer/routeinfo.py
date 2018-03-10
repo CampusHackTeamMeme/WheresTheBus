@@ -32,6 +32,6 @@ class routeInfo(Resource):
 
                 busRoutes.append(query.fetchall()[0][0])
 
-            toSend[stops] = busRoutes
+            toSend[stops] = list(set(busRoutes))
 
         return toSend, 200

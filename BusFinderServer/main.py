@@ -1,6 +1,5 @@
 from flask import Flask
 from flask_restful import Api
-#from utils import createBase
 
 from busstops import busStops
 from routeinfo import routeInfo
