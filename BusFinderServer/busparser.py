@@ -1,11 +1,13 @@
 import argparse
 import sqlite3
 import os
+import time
 
 import requests
 
-ROUTES_URL = 'http://data.southampton.ac.uk/dumps/bus-info/2018-03-04/routes.json'
-STOPS_URL = 'http://data.southampton.ac.uk/dumps/bus-info/2018-03-04/stops.json'
+ROUTES_URL = 'http://api.bus.southampton.ac.uk/dump/routes'
+STOPS_URL = 'http://api.bus.southampton.ac.uk/dump/stops'
+OPERATORS_URL = 'http://api.bus.southampton.ac.uk/dump/operators'
 
 
 def create_stops_and_routes(conn):
@@ -20,12 +22,20 @@ def create_stops_and_routes(conn):
         lon REAL
     )''')
     c.execute('''
+    CREATE TABLE operators(
+        operator_id TEXT PRIMARY KEY NOT NULL,
+        label TEXT
+    )
+    ''')
+    c.execute('''
     CREATE TABLE routes(
         route_id TEXT PRIMARY KEY NOT NULL,
         desc TEXT,
         operator TEXT,
         direction TEXT,
-        service TEXT
+        service TEXT,
+        FOREIGN KEY (operator) REFERENCES operators(operator_id)
+          ON DELETE CASCADE ON UPDATE NO ACTION
     )''')
     c.execute('''
     CREATE TABLE routes_stops(
@@ -48,25 +58,10 @@ def create_stops_and_routes(conn):
 
 def create_db(conn):
     create_stops_and_routes(conn)
-    c = conn.cursor()
-
-    # Create history table
-    c.execute('''
-       CREATE TABLE import_log(
-           stop_id TEXT PRIMARY KEY NOT NULL,
-           desc TEXT,
-           lat REAL,
-           lon REAL
-       )''')
-    # Save (commit) the changes
-    conn.commit()
 
 
 def delete_db(conn):
     delete_stops_and_routes(conn)
-    c = conn.cursor()
-    c.execute('''DROP TABLE import_log''')
-    conn.commit()
 
 
 def delete_stops_and_routes(conn):
@@ -113,19 +108,41 @@ def insert_routes(conn, routes_data):
     print("%d ROUTES INSERTED" % routes_length)
 
 
+def insert_operators(conn, operators_data):
+    c = conn.cursor()
+    operators_length = len(operators_data)
+    print("INSERTING OPERATORS 0/%d" % operators_length, end="\r")
+    count = 0
+    for operator in operators_data:
+        count += 1
+        if count % 10 == 0:
+            print("INSERTING OPERATORS %d/%d" % (count, operators_length), end="\r")
+        c.execute(
+            'INSERT OR REPLACE INTO operators (operator_id, label) VALUES (?,?)',
+            (operator['id'], operator['label'])
+        )
+    print("%d OPERATORS INSERTED" % operators_length)
+
+
 def import_data(conn):
+
     print("Getting stops JSON")
     stops_resp = requests.get(STOPS_URL, timeout=30)
     stops_data = stops_resp.json()
 
     insert_stops(conn, stops_data)
 
+    print("Getting operators JSON")
+    operators_resp = requests.get(OPERATORS_URL, timeout=30)
+    operators_data = operators_resp.json()
+
+    insert_operators(conn, operators_data)
+
     print("Getting routes JSON")
     routes_resp = requests.get(ROUTES_URL, timeout=30)
     routes_data = routes_resp.json()
 
     insert_routes(conn, routes_data)
-
 
 def main(db_name, should_create_db):
     exists = os.path.isfile(db_name)
