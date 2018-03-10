@@ -133,6 +133,8 @@ public class NavigationDrawer extends AppCompatActivity
     public void onMapReady(GoogleMap googleMap) {
         gmap = googleMap;
 
+        setMapCameraToSoton(gmap);
+    public void setMapCameraToSoton(GoogleMap gmap){
         //set map camera to soton
         LatLng soton = new LatLng(50.928834, -1.400735);
         gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(soton, 13));
