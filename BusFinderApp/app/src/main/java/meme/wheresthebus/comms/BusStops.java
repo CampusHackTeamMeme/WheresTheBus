@@ -19,7 +19,7 @@ import java.util.Scanner;
  */
 
 public class BusStops {
-    private static final String busStopServerURL = "test";
+    private static final String busStopServerURL = "10.9.156.46:8080/api/busstops";
     public BusStops (){
 
     }

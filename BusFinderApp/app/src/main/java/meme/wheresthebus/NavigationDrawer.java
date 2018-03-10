@@ -19,12 +19,14 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 
 public class NavigationDrawer extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
@@ -130,5 +132,9 @@ public class NavigationDrawer extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         gmap = googleMap;
+
+        //set map camera to soton
+        LatLng soton = new LatLng(50.928834, -1.400735);
+        gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(soton, 13));
     }
 }
