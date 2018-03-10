@@ -8,7 +8,7 @@ ROUTES_URL = 'http://data.southampton.ac.uk/dumps/bus-info/2018-03-04/routes.jso
 STOPS_URL = 'http://data.southampton.ac.uk/dumps/bus-info/2018-03-04/stops.json'
 
 
-def create_db(conn):
+def create_stops_and_routes(conn):
     c = conn.cursor()
 
     # Create history table
@@ -37,12 +37,39 @@ def create_db(conn):
         FOREIGN KEY (stop_id) REFERENCES stops (stop_id)
           ON DELETE CASCADE ON UPDATE NO ACTION
     )''')
+    c.execute('''
+    CREATE INDEX geo_stops_index
+      on stops (lat, lon);
+    ''')
 
     # Save (commit) the changes
     conn.commit()
 
 
+def create_db(conn):
+    create_stops_and_routes(conn)
+    c = conn.cursor()
+
+    # Create history table
+    c.execute('''
+       CREATE TABLE import_log(
+           stop_id TEXT PRIMARY KEY NOT NULL,
+           desc TEXT,
+           lat REAL,
+           lon REAL
+       )''')
+    # Save (commit) the changes
+    conn.commit()
+
+
 def delete_db(conn):
+    delete_stops_and_routes(conn)
+    c = conn.cursor()
+    c.execute('''DROP TABLE import_log''')
+    conn.commit()
+
+
+def delete_stops_and_routes(conn):
     c = conn.cursor()
     c.execute('''DROP TABLE stops''')
     c.execute('''DROP TABLE routes''')
