@@ -27,6 +27,12 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.util.ArrayDeque;
+import java.util.concurrent.ExecutionException;
+
+import meme.wheresthebus.comms.BusStops;
 
 public class NavigationDrawer extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
@@ -134,9 +140,29 @@ public class NavigationDrawer extends AppCompatActivity
         gmap = googleMap;
 
         setMapCameraToSoton(gmap);
+        addBusStops(gmap);
+    }
+
     public void setMapCameraToSoton(GoogleMap gmap){
         //set map camera to soton
         LatLng soton = new LatLng(50.928834, -1.400735);
         gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(soton, 13));
+    }
+
+    public void addBusStops(GoogleMap gmap){
+        final LatLng position = gmap.getCameraPosition().target;
+        float zoom = gmap.getCameraPosition().zoom;
+        this.runOnUiThread(() -> addStopsAsync(gmap, position, zoom));
+    }
+
+    private void addStopsAsync(GoogleMap gmap, LatLng position, double zoom){
+        try {
+            ArrayDeque<BusStops.BusStop> stops = new BusStops().execute(gmap.getCameraPosition()).get();
+            for(BusStops.BusStop b : stops){
+                gmap.addMarker(new MarkerOptions().position(b.position).title(b.name));
+            }
+        } catch (ExecutionException | InterruptedException e){
+            e.printStackTrace();
+        }
     }
 }
