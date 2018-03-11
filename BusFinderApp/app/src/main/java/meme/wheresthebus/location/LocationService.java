@@ -9,8 +9,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 public class LocationService extends Service
@@ -19,10 +21,13 @@ public class LocationService extends Service
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 2;
     private static final float LOCATION_DISTANCE = 0;
+    private Location mLastLocation;
+
 
     private class LocationListener implements android.location.LocationListener
     {
-        Location mLastLocation;
+
+
 
         public LocationListener(String provider)
         {
@@ -35,6 +40,13 @@ public class LocationService extends Service
         {
             Log.e(TAG, "onLocationChanged: " + location);
             mLastLocation.set(location);
+
+            //send location data
+            LocalBroadcastManager lmb = LocalBroadcastManager.getInstance(LocationService.this);
+            Intent data = new Intent(Intent.ACTION_GET_CONTENT);
+            data.putExtra("lat", mLastLocation.getLatitude());
+            data.putExtra("lng", mLastLocation.getLongitude());
+            lmb.sendBroadcast(data);
         }
 
         @Override
@@ -121,5 +133,15 @@ public class LocationService extends Service
         if (mLocationManager == null) {
             mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
         }
+    }
+
+    public class LocalBinder extends Binder {
+        public LocationService getService() {
+            return LocationService.this;
+        }
+    }
+
+    public Location getLocation(){
+        return mLastLocation;
     }
 }

@@ -26,7 +26,7 @@ import java.util.Scanner;
  * Created by hb on 10/03/2018.
  */
 
-public class BusStops extends AsyncTask<CameraPosition, Void, ArrayDeque<BusStops.BusStop>> {
+public class BusStops extends AsyncTask<Double, Void, ArrayDeque<BusStops.BusStop>> {
     private static final String busStopServerURL = "http://10.9.156.46:8080/api/busstops";
     private static final double loadFactor = 0.015;
     public BusStops (){
@@ -34,20 +34,24 @@ public class BusStops extends AsyncTask<CameraPosition, Void, ArrayDeque<BusStop
     }
 
     @Override
-    protected ArrayDeque<BusStop> doInBackground(CameraPosition... cameraPositions) {
-        ArrayDeque<BusStop> result = new ArrayDeque<>();
-        for(CameraPosition cp : cameraPositions){
-            result.addAll(getStops(cp.target, cp.zoom));
-        }
+    protected ArrayDeque<BusStop> doInBackground(Double... positionData) {
+        LatLng latLng = new LatLng(positionData[0], positionData[1]);
 
-        return result;
+
+        return getStops(latLng,  (float) positionData[2].doubleValue());
     }
 
     private ArrayDeque<BusStop> getStops(LatLng position, float zoom){
-        double startLat = position.latitude - loadFactor * Math.log(zoom);
-        double startLon = position.longitude - loadFactor * Math.log(zoom);
-        double endLat = position.latitude + loadFactor * Math.log(zoom);
-        double endLon = position.longitude + loadFactor * Math.log(zoom);
+        double startLat = position.latitude - loadFactor / Math.log(zoom);
+        double startLon = position.longitude - loadFactor / Math.log(zoom);
+        double endLat = position.latitude + loadFactor / Math.log(zoom);
+        double endLon = position.longitude + loadFactor / Math.log(zoom);
+
+        //System.out.println(startLat);
+        //System.out.println(startLon);
+        //System.out.println(endLat);
+        //System.out.println(endLon);
+
 
         HashMap<String, String> request = new HashMap<>();
         request.put("startLat", Double.toString(startLat));
@@ -83,8 +87,8 @@ public class BusStops extends AsyncTask<CameraPosition, Void, ArrayDeque<BusStop
             for(int i=0; i < response.length(); i++){
                 JSONObject stopAsJSON = response.getJSONObject(i);
                 BusStop stop = new BusStop(stopAsJSON.getString("name"),
-                        new LatLng(stopAsJSON.getDouble("lat"),
-                            stopAsJSON.getDouble("lon")));
+                        new LatLng(stopAsJSON.getDouble("lon"),
+                            stopAsJSON.getDouble("lat")));
                 stops.add(stop);
             }
 

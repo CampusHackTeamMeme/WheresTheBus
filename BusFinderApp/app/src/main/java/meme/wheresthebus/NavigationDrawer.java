@@ -1,14 +1,29 @@
 package meme.wheresthebus;
 
+import android.Manifest;
+import android.app.ActivityManager;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
+import android.os.Looper;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -33,11 +48,34 @@ import java.util.ArrayDeque;
 import java.util.concurrent.ExecutionException;
 
 import meme.wheresthebus.comms.BusStops;
+import meme.wheresthebus.comms.ParameterStringBuilder;
+import meme.wheresthebus.location.LocationService;
+
+import static android.content.Intent.ACTION_GET_CONTENT;
 
 public class NavigationDrawer extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
 
     private GoogleMap gmap;
+    private LocationService location;
+    private Boolean locationBound;
+    private ServiceConnection locationConnection;
+    private Boolean onLocation;
+
+    private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (ACTION_GET_CONTENT.equals(action) && onLocation) {
+                double lat = intent.getDoubleExtra("lat", 999);
+                double lng = intent.getDoubleExtra("lng", 999);
+
+                centreMapWithBusStops(new LatLng(lat, lng), 16);
+                onLocation = false;
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,10 +93,48 @@ public class NavigationDrawer extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        LocalBroadcastManager lmb = LocalBroadcastManager.getInstance(this);
+        lmb.registerReceiver(broadcastReceiver, new IntentFilter(ACTION_GET_CONTENT));
+
         showMap();
+
+        onLocation = true;
+
+        //start location service
+        new Thread(() -> startService(new Intent(this, LocationService.class))).start();
+
     }
 
-    private void showMap(){
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+    }
+
+    private void initLocationConnection() {
+        locationConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName componentName, IBinder service) {
+                location = ((LocationService.LocalBinder) service).getService();
+
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName componentName) {
+
+            }
+        };
+    }
+
+    void doUnbindService() {
+        if (locationBound) {
+            unbindService(locationConnection);
+            locationBound = false;
+        }
+    }
+
+    private void showMap() {
         MapFragment map = MapFragment.newInstance();
         FragmentTransaction fragmentTransaction =
                 getFragmentManager().beginTransaction();
@@ -67,7 +143,7 @@ public class NavigationDrawer extends AppCompatActivity
         map.getMapAsync(this);
     }
 
-    public void getLimits(){
+    public void getLimits() {
         CameraPosition cp = gmap.getCameraPosition();
         LatLng position = cp.target;
         System.out.println(position.latitude + " " + position.longitude);
@@ -109,7 +185,7 @@ public class NavigationDrawer extends AppCompatActivity
         if (id == R.id.nav_map) {
             getLimits();
         } else if (id == R.id.nav_settings) {
-            addBusStops();
+            //addBusStops();
 
         } else if (id == R.id.nav_share) {
             try {
@@ -120,7 +196,7 @@ public class NavigationDrawer extends AppCompatActivity
                 sAux = sAux + "https://github.com/CampusHackTeamMeme/WheresTheBus/ \n\n";
                 i.putExtra(Intent.EXTRA_TEXT, sAux);
                 startActivity(Intent.createChooser(i, "choose one"));
-            } catch(Exception e) {
+            } catch (Exception e) {
                 //e.toString();
             }
 
@@ -138,26 +214,54 @@ public class NavigationDrawer extends AppCompatActivity
     public void onMapReady(GoogleMap googleMap) {
         gmap = googleMap;
 
+        //set current location pointer
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        gmap.setMyLocationEnabled(true);
+
+        //get location
         setMapCameraToSoton(gmap);
         gmap.setOnMapLoadedCallback(this);
+    }
+
+    private void centreMap(LatLng position){
+        gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                    position, 16));
+
+    }
+
+    private void centreMapWithBusStops(LatLng position, float zoom){
+        centreMap(position);
+        addBusStops(position, zoom);
     }
 
     public void setMapCameraToSoton(GoogleMap gmap){
         //set map camera to soton
         LatLng soton = new LatLng(50.928834, -1.400735);
-        gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(soton, 13));
+        setMapCamera(gmap,soton,13);
     }
 
-    public void addBusStops(){
-        final LatLng position = gmap.getCameraPosition().target;
-        float zoom = gmap.getCameraPosition().zoom;
+    public void setMapCamera(GoogleMap gmap, LatLng centre, float zoom){
+        gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(centre, zoom));
+    }
+
+    public void addBusStops(LatLng position, float zoom){
         this.runOnUiThread(() -> addStopsAsync(gmap, position, zoom));
     }
 
     private void addStopsAsync(GoogleMap gmap, LatLng position, double zoom){
         try {
-            ArrayDeque<BusStops.BusStop> stops = new BusStops().execute(gmap.getCameraPosition()).get();
+            ArrayDeque<BusStops.BusStop> stops = new BusStops().execute(position.latitude, position.longitude, zoom).get();
             for(BusStops.BusStop b : stops){
+                //System.out.println(b.name + " " + b.position.longitude + " " + b.position.latitude);
                 gmap.addMarker(new MarkerOptions().position(b.position).title(b.name));
             }
         } catch (ExecutionException | InterruptedException e){
@@ -167,6 +271,6 @@ public class NavigationDrawer extends AppCompatActivity
 
     @Override
     public void onMapLoaded() {
-        addBusStops();
+        //addBusStops(gmap.getCameraPosition().target,gmap.getCameraPosition().zoom);
     }
 }
