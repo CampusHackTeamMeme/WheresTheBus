@@ -32,6 +32,8 @@
             android:enabled="true"
             android:label="Where&apos;s the bus location service" />
 
+        <receiver android:name=".notify.Reminder" />
+
     </application>
 
 </manifest>
