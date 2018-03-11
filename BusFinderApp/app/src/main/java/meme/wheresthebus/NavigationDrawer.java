@@ -25,6 +25,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.Gravity;
 import android.view.View;
@@ -76,6 +77,8 @@ import meme.wheresthebus.comms.request.TimetableRequest;
 import meme.wheresthebus.location.LocationService;
 import meme.wheresthebus.notify.Reminder;
 
+import static android.app.Notification.EXTRA_CHANNEL_ID;
+import static android.app.Notification.EXTRA_NOTIFICATION_ID;
 import static android.content.Intent.ACTION_GET_CONTENT;
 
 public class NavigationDrawer extends AppCompatActivity
@@ -93,6 +96,19 @@ public class NavigationDrawer extends AppCompatActivity
 
     private Intent locationService;
     private Intent reminder;
+
+
+    private void scheduleNotification(Notification notification, int delay) {
+
+        Intent notificationIntent = new Intent(this, Reminder.class);
+        notificationIntent.putExtra(Reminder.NOTIFICATION_ID, 1);
+        notificationIntent.putExtra(Reminder.NOTIFICATION, notification);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        long futureInMillis = SystemClock.elapsedRealtime() + delay;
+        AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+        alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, futureInMillis, pendingIntent);
+    }
 
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 
@@ -112,6 +128,7 @@ public class NavigationDrawer extends AppCompatActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         markers = new HashMap<>();
         loaded = new HashSet<>();
 
@@ -319,9 +336,6 @@ public class NavigationDrawer extends AppCompatActivity
             tabHistory.add(host.getCurrentTab());
             host.setCurrentTab(0);
             this.setTitle(getString(R.string.app_name));
-        } else if (id == R.id.nav_settings) {
-            setReminder("test", "message body", new Date(), 100);
-
         } else if (id == R.id.nav_share) {
             try {
                 Intent i = new Intent(Intent.ACTION_SEND);
@@ -332,7 +346,7 @@ public class NavigationDrawer extends AppCompatActivity
                 i.putExtra(Intent.EXTRA_TEXT, sAux);
                 startActivity(Intent.createChooser(i, "choose one"));
             } catch (Exception e) {
-                //e.toString();
+
             }
 
         } else if (id == R.id.nav_send) {
@@ -437,8 +451,10 @@ public class NavigationDrawer extends AppCompatActivity
     //@RequiresApi(api = Build.VERSION_CODES.O)
     private void buildBusStopInfo(BusStop bs){
         //get info
-        HashMap<String, ArrayList<String>> times;
         try {
+            HashMap<String, ArrayList<String>> timetable = new TimetableRequest().execute(bs).get();
+            System.out.print(timetable.keySet());
+
             HashMap<String, BusStopInfo> busStopInfo = new BusStopInfoRequest().execute(bs).get();
             bs.addInfo(busStopInfo.get(bs.id));
             times = new TimetableRequest().execute(bs).get();
@@ -500,22 +516,21 @@ public class NavigationDrawer extends AppCompatActivity
     }
 
 
-    private void setReminder(String title, String message, Date notificationTime, long delay){
-        Notification.Builder builder = new Notification.Builder(this);
-        builder.setContentTitle(title);
-        builder.setContentText(message);
-        builder.setSmallIcon(R.drawable.ic_menu_manage);
-        Notification notification = builder.build();
+    private void setReminder(String title){
+        Intent snoozeIntent = new Intent(this, BroadcastReceiver.class);
+        //snoozeIntent.setAction(ACTION_SNOOZE);
+        snoozeIntent.putExtra(EXTRA_NOTIFICATION_ID, 0);
+        PendingIntent snoozePendingIntent =
+                PendingIntent.getBroadcast(this, 0, snoozeIntent, 0);
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, EXTRA_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_menu_gallery)
+                .setContentTitle("Survey")
+                .setContentText(title)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .addAction(R.drawable.ic_menu_gallery, "Yes",
+                        (snoozePendingIntent));
 
-
-        Intent notificationIntent = new Intent(this, Reminder.class);
-        notificationIntent.putExtra(Reminder.NOTIFICATION_ID, 1);
-        notificationIntent.putExtra(Reminder.NOTIFICATION, notification);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        long futureInMillis = SystemClock.elapsedRealtime() + delay;
-        AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-        alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, futureInMillis, pendingIntent);
+        scheduleNotification(mBuilder.getNotification(), 60     000);
     }
 
     public class RouteBuilder implements OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
@@ -549,5 +564,8 @@ public class NavigationDrawer extends AppCompatActivity
 
             gmap.setOnMapLoadedCallback(this);
         }
+
+
+
     }
 }
