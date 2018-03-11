@@ -10,6 +10,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -49,12 +50,16 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 
+import meme.wheresthebus.comms.data.BusRoute;
+import meme.wheresthebus.comms.request.BusRouteRequest;
 import meme.wheresthebus.comms.request.BusStopInfoRequest;
 import meme.wheresthebus.comms.data.BusStop;
 import meme.wheresthebus.comms.data.BusStopInfo;
@@ -135,17 +140,23 @@ public class NavigationDrawer extends AppCompatActivity
         spec.setIndicator("Map");
         tabHost.addTab(spec);
 
-        //add routes tab
+        //add live times tab
         spec = tabHost.newTabSpec("Live Times");
-        spec.setContent(R.id.routes);
+        spec.setContent(R.id.live_times);
         spec.setIndicator("Live Times");
+        tabHost.addTab(spec);
+
+        //add route tab
+        spec = tabHost.newTabSpec("Route");
+        spec.setContent(R.id.bus_route);
+        spec.setIndicator("Route");
         tabHost.addTab(spec);
 
         tabHistory = new ArrayDeque<>();
 
         //pull tab ids
         LinearLayout map = findViewById(R.id.page);
-        LinearLayout liveTimes = findViewById(R.id.routes);
+        LinearLayout liveTimes = findViewById(R.id.live_times);
 
         //set tab animations
         tabAnimations(tabHost, map, liveTimes);
@@ -418,12 +429,67 @@ public class NavigationDrawer extends AppCompatActivity
             stop.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    //Harry
+                    loadRoute((String) ((Button) v).getText());
                 }
             });
             stop.setText(bus);
             layout.addView(stop);
         }
 
+    }
+
+    private void loadRoute(String routeName){
+        try {
+            AsyncTask<String, Void, BusRoute> route = new BusRouteRequest().execute(routeName);
+            viewRouteTab(route);
+        } catch(Exception e){
+            return;
+        }
+    }
+
+    private void viewRouteTab(AsyncTask<String, Void, BusRoute> route){
+        TabHost tabs = findViewById(R.id.tab_host);
+        tabHistory.push(tabs.getCurrentTab());
+        tabs.setCurrentTabByTag("Route");
+
+        MapFragment map = MapFragment.newInstance();
+        FragmentTransaction fragmentTransaction =
+                getFragmentManager().beginTransaction();
+        fragmentTransaction.replace(R.id.bus_route, map);
+        fragmentTransaction.commit();
+        map.getMapAsync(new RouteBuilder(route));
+    }
+
+    public class RouteBuilder implements OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
+        GoogleMap gmap;
+        AsyncTask<String, Void, BusRoute> route;
+
+
+        public RouteBuilder(AsyncTask<String, Void, BusRoute> route){
+            this.route = route;
+        }
+
+        @Override
+        public void onMapLoaded() {
+            try {
+                BusRoute br = route.get();
+                NavigationDrawer.this.setTitle(br.name);
+                PolylineOptions options = new PolylineOptions().addAll(br.route);
+
+                gmap.addPolyline(options);
+
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onMapReady(GoogleMap gmap) {
+            this.gmap = gmap;
+            setMapCameraToSoton(gmap);
+            gmap.clear();
+
+            gmap.setOnMapLoadedCallback(this);
+        }
     }
 }

@@ -14,7 +14,6 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import meme.wheresthebus.comms.ParameterStringBuilder;
 import meme.wheresthebus.comms.data.BusStop;
 import meme.wheresthebus.comms.data.BusStopInfo;
 
@@ -46,7 +45,7 @@ public class BusStopInfoRequest extends AsyncTask<BusStop, Void, HashMap<String,
 
     private HashMap<String, BusStopInfo> executeBusStopRequest(HashMap<String, BusStop> stops){
         try {
-            URL url = new URL(routeinfoURL + ParameterStringBuilder.getStopIDs(stops));
+            URL url = new URL(routeinfoURL + ParameterStringBuilder.getStop(stops));
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
             Scanner scanner = new Scanner(new InputStreamReader(connection.getInputStream()));
