@@ -9,7 +9,6 @@ class BusStops(Resource):
 
     def get(self):
         r = request.args.to_dict()
-        print(r)
 
         conn = sql.connect(self.DBfile)
         c = conn.cursor()
