@@ -23,18 +23,17 @@ class TimeTable(Resource):
         to_send = {}
 
         if not bus_stops_table:
-            to_send[r['stop']] = [{'error' : "No Bus Times Available"}]
+            to_send[r['stop']] = [{'error': "No Bus Times Available"}]
             return to_send, 200
 
         bus_stops_rows = bus_stops_table.find_all("tr")
 
-        data = []
+        data = {}
 
         for row in bus_stops_rows:
             cells = row.find_all("td")
             bus_regex = "(?P<dest>.*)at\s(?P<time>\d\d:\d\d)"
             bus_service = cells[0].find("a").text
-            #print(cells[1].text)
             bus_return = re.search(bus_regex, cells[1].text)
             if bus_return is not None:
                 bus_dest = bus_return.group('dest')
@@ -42,16 +41,17 @@ class TimeTable(Resource):
             else:
                 bus_regex = "(?P<dest>.*)in\s(?P<time>[0-9]{0,3})\s"
                 bus_return = re.search(bus_regex, cells[1].text)
-                bus_dest = bus_return.group('dest')
-                bus_time = (datetime.now() + timedelta(minutes = int(bus_return.group('time')))).strftime("%H:%M")
+                if bus_return is not None:
+                    bus_dest = bus_return.group('dest')
+                    bus_time = (datetime.now() + timedelta(minutes=int(bus_return.group('time')))).strftime("%H:%M")
+                else:
+                    bus_regex = "(?P<dest>.*)\s(?P<time>DUE)\s"
+                    bus_return = re.search(bus_regex, cells[1].text, flags=re.IGNORECASE)
+                    bus_dest = bus_return.group('dest')
+                    bus_time = datetime.now().strftime("%H:%M")
 
-            bus_dict = {
-                    'service': bus_service,
-                    'time': bus_time,
-                    'dest': bus_dest
-                }
-
-            data.append(bus_dict)
+            data.setdefault(bus_service, {}).setdefault("time", []).append(bus_time)
+            data[bus_service].setdefault("destination", bus_dest)
 
         to_send[r['stop']] = data
 
