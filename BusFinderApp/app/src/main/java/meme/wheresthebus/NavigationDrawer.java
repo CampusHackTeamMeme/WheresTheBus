@@ -13,11 +13,13 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
@@ -25,6 +27,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.LocalBroadcastManager;
+import android.view.Gravity;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -37,6 +40,7 @@ import android.view.MenuItem;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
@@ -93,6 +97,7 @@ public class NavigationDrawer extends AppCompatActivity
                 centreMapWithBusStops(new LatLng(lat, lng), 16);
                 onLocation = false;
             }
+
         }
     };
 
@@ -233,11 +238,21 @@ public class NavigationDrawer extends AppCompatActivity
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
+
+            if(tabHistory.size()==1){
+                this.setTitle(getString(R.string.app_name));
+            }
+
             if(tabHistory.isEmpty()) {
                 super.onBackPressed();
             } else {
+
+
                 TabHost tabs = findViewById(R.id.tab_host);
                 tabs.setCurrentTab(tabHistory.pop());
+
+
+
             }
         }
     }
@@ -270,6 +285,7 @@ public class NavigationDrawer extends AppCompatActivity
             if(host.getCurrentTab() != 0)
             tabHistory.add(host.getCurrentTab());
             host.setCurrentTab(0);
+            this.setTitle(getString(R.string.app_name));
         } else if (id == R.id.nav_settings) {
 
 
@@ -341,6 +357,7 @@ public class NavigationDrawer extends AppCompatActivity
 
     public void setMapCamera(GoogleMap gmap, LatLng centre, float zoom){
         gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(centre, zoom));
+
     }
 
     public void addBusStops(LatLng position, float zoom){
@@ -365,6 +382,7 @@ public class NavigationDrawer extends AppCompatActivity
         //addBusStops(gmap.getCameraPosition().target,gmap.getCameraPosition().zoom);
     }
 
+
     @Override
     public boolean onMarkerClick(Marker marker) {
         return false;
@@ -379,6 +397,7 @@ public class NavigationDrawer extends AppCompatActivity
         buildBusStopInfo(bs);
     }
 
+    //@RequiresApi(api = Build.VERSION_CODES.O)
     private void buildBusStopInfo(BusStop bs){
         //get info
         try {
@@ -389,14 +408,14 @@ public class NavigationDrawer extends AppCompatActivity
         }
         //set name
         TextView name = new TextView(this);
-        name.setText(bs.name);
-
+        this.setTitle(bs.name);
         //add bus routes
         GridLayout layout = findViewById(R.id.busStopInfo);
         layout.addView(name, new GridLayout.LayoutParams());
 
         for(String bus : bs.info.services){
-            TextView text = new TextView(this);
+            EditText text = new EditText(this);
+
             text.setText(bus);
             layout.addView(text);
         }
