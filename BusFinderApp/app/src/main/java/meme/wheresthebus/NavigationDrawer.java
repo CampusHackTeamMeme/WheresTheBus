@@ -167,8 +167,8 @@ public class NavigationDrawer extends AppCompatActivity
         tabHost.setOnTabChangedListener(new TabHost.OnTabChangeListener() {
 
             public void onTabChanged(String tabId) {
-                tab1Layout.setAnimation(outToLeftAnimation());
-                tab2Layout.setAnimation(outToLeftAnimation());
+                tab1Layout.setAnimation(inFromRightAnimation());
+                //tab2Layout.setAnimation(inFromRightAnimation());
             }
         });
     }
@@ -242,6 +242,7 @@ public class NavigationDrawer extends AppCompatActivity
 
             if(tabHistory.size()==1){
                 this.setTitle(getString(R.string.app_name));
+
             }
 
             if(tabHistory.isEmpty()) {
