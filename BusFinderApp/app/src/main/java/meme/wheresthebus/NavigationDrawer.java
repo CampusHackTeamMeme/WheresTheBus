@@ -40,6 +40,7 @@ import android.view.MenuItem;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
@@ -412,12 +413,13 @@ public class NavigationDrawer extends AppCompatActivity
         //add bus routes
         GridLayout layout = findViewById(R.id.busStopInfo);
         layout.addView(name, new GridLayout.LayoutParams());
-
+        layout.removeAllViews();
         for(String bus : bs.info.services){
-            EditText text = new EditText(this);
+            Button stop = new Button(this);
 
-            text.setText(bus);
-            layout.addView(text);
+            stop.setText(bus);
+            layout.addView(stop);
         }
+
     }
 }
