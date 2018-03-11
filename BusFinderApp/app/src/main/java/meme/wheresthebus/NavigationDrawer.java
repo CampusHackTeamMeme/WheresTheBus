@@ -1,7 +1,11 @@
 package meme.wheresthebus;
 
 import android.Manifest;
+import android.app.ActivityManager;
+import android.app.AlarmManager;
 import android.app.FragmentTransaction;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -15,6 +19,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -54,6 +59,7 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayDeque;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
@@ -65,6 +71,7 @@ import meme.wheresthebus.comms.data.BusStop;
 import meme.wheresthebus.comms.data.BusStopInfo;
 import meme.wheresthebus.comms.request.BusStopRequest;
 import meme.wheresthebus.location.LocationService;
+import meme.wheresthebus.notify.Reminder;
 
 import static android.content.Intent.ACTION_GET_CONTENT;
 
@@ -82,6 +89,7 @@ public class NavigationDrawer extends AppCompatActivity
     private HashMap<Marker, BusStop> markers;
 
     private Intent locationService;
+    private Intent reminder;
 
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 
@@ -126,6 +134,11 @@ public class NavigationDrawer extends AppCompatActivity
         onLocation = true;
 
         locationService = new Intent(this, LocationService.class);
+        if(!isMyServiceRunning(Reminder.class)){
+            reminder = new Intent(this, Reminder.class);
+            new Thread(() -> startService(reminder)).start();
+        }
+
 
         //start location service
         new Thread(() -> startService(locationService)).start();
@@ -160,6 +173,16 @@ public class NavigationDrawer extends AppCompatActivity
 
         //set tab animations
         tabAnimations(tabHost, map, liveTimes);
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -294,7 +317,7 @@ public class NavigationDrawer extends AppCompatActivity
             host.setCurrentTab(0);
             this.setTitle(getString(R.string.app_name));
         } else if (id == R.id.nav_settings) {
-
+            setReminder("test", "message body", new Date(), 100);
 
         } else if (id == R.id.nav_share) {
             try {
@@ -458,6 +481,25 @@ public class NavigationDrawer extends AppCompatActivity
         fragmentTransaction.replace(R.id.bus_route, map);
         fragmentTransaction.commit();
         map.getMapAsync(new RouteBuilder(route));
+    }
+
+
+    private void setReminder(String title, String message, Date notificationTime, long delay){
+        Notification.Builder builder = new Notification.Builder(this);
+        builder.setContentTitle(title);
+        builder.setContentText(message);
+        builder.setSmallIcon(R.drawable.ic_menu_manage);
+        Notification notification = builder.build();
+
+
+        Intent notificationIntent = new Intent(this, Reminder.class);
+        notificationIntent.putExtra(Reminder.NOTIFICATION_ID, 1);
+        notificationIntent.putExtra(Reminder.NOTIFICATION, notification);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        long futureInMillis = SystemClock.elapsedRealtime() + delay;
+        AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+        alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, futureInMillis, pendingIntent);
     }
 
     public class RouteBuilder implements OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
