@@ -2,7 +2,7 @@ from flask_restful import Resource
 from flask import request
 import sqlite3 as sql
 
-class serviceStops(Resource):
+class ServiceStops(Resource):
     def __init__(self, file):
         self.DBfile = file
 

@@ -34,7 +34,7 @@ class TimeTable(Resource):
             cells = row.find_all("td")
             bus_regex = "(?P<dest>.*)at\s(?P<time>\d\d:\d\d)"
             bus_service = cells[0].find("a").text
-            print(cells[1].text)
+            #print(cells[1].text)
             bus_return = re.search(bus_regex, cells[1].text)
             if bus_return is not None:
                 bus_dest = bus_return.group('dest')
