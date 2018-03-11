@@ -29,14 +29,18 @@ class ServiceStops(Resource):
         data = {"service": []}
         for i in query.fetchall():
             list_exits = False
-            for operator in data["service"]:
-                if operator["operator"] == i[1]:
-                    list_exits = True
-                    operator.setdefault("stops", []).append(i[0])
-            if not list_exits:
-                data["service"].append({
-                    "operator": i[1],
-                    "stops": [i[0]],
-                })
+            if request.args.get('clean'):
+                for operator in data["service"]:
+                    if operator["operator"] == i[1]:
+                        list_exits = True
+                        operator.setdefault("stops", []).append(i[0])
+                if not list_exits:
+                    data["service"].append({
+                        "operator": i[1],
+                        "stops": [i[0]],
+                    })
+            else:
+                if not list_exits:
+                    data["service"].append(i[1] + i[0])
 
         return data, 200
