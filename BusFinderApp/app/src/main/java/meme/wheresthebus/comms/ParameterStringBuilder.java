@@ -29,7 +29,7 @@ public class ParameterStringBuilder {
 
     public static String getStopIDs (HashMap<String, BusStop> stops) throws UnsupportedEncodingException {
         StringBuilder result = new StringBuilder();
-        result.append("stops={[");
+        result.append("stop=");
 
         for (String stopID : stops.keySet()) {
             result.append(URLEncoder.encode(stopID, "UTF-8"));
@@ -38,7 +38,7 @@ public class ParameterStringBuilder {
 
         String resultString = result.toString();
         return resultString.length() > 0
-                ? "?" + resultString.substring(0, resultString.length() - 1) + "]}"
+                ? "?" + resultString.substring(0, resultString.length() - 1)
                 : resultString;
     }
 }

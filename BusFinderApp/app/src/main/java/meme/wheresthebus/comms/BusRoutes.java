@@ -27,7 +27,7 @@ import java.util.Scanner;
  * Created by hb on 10/03/2018.
  */
 
-public class BusRoutes extends AsyncTask<BusStop, Void, HashMap<String, BusStop>> {
+public class BusRoutes extends AsyncTask<BusStop, Void, HashMap<String, BusStopInfo>> {
     private static final String routeinfoURL = "http://10.9.156.46:8080/api/routeinfo";
     private static final double loadFactor = 0.015;
     public BusRoutes (){
@@ -35,21 +35,21 @@ public class BusRoutes extends AsyncTask<BusStop, Void, HashMap<String, BusStop>
     }
 
     @Override
-    protected HashMap<String, BusStop> doInBackground(BusStop... busStops) {
+    protected HashMap<String, BusStopInfo> doInBackground(BusStop... busStops) {
         HashMap<String, BusStop> stops = new HashMap<>();
 
         for(int i = 0; i < busStops.length; i++){
             stops.put(busStops[i].id, busStops[i]);
         }
 
-        HashMap<String, BusStop> stopInfo = executeBusStopRequest(stops);
+        HashMap<String, BusStopInfo> stopInfo = executeBusStopRequest(stops);
 
-        return stops;
+        return stopInfo;
     }
 
 
 
-    private HashMap<String, BusStop> executeBusStopRequest(HashMap<String, BusStop> stops){
+    private HashMap<String, BusStopInfo> executeBusStopRequest(HashMap<String, BusStop> stops){
         try {
             URL url = new URL(routeinfoURL + ParameterStringBuilder.getStopIDs(stops));
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -64,19 +64,19 @@ public class BusRoutes extends AsyncTask<BusStop, Void, HashMap<String, BusStop>
             connection.disconnect();
 
             JSONObject fullResponse = new JSONObject(contents.toString());
-            Iterator<String> keyItr = fullResponse.keys();
 
-            while(keyItr.hasNext()){
-                String key = keyItr.next();
-                ArrayDeque<String> buses = new ArrayDeque<>();
-                JSONArray jsonBuses = fullResponse.getJSONArray("key");
-                for(int i = 0; i < jsonBuses.length(); i++){
-                    buses.add(jsonBuses.getString(i));
-                }
-                stops.get(key).addInfo(new BusStopInfo(buses));
+            HashMap<String, BusStopInfo> stopInfo = new HashMap<>();
+
+            ArrayDeque<String> buses = new ArrayDeque<>();
+            JSONArray jsonBuses = fullResponse.getJSONArray("stop");
+            for(int i = 0; i < jsonBuses.length(); i++){
+                buses.add(jsonBuses.getString(i));
             }
 
-            return stops;
+            stopInfo.put((String) stops.keySet().toArray()[0], new BusStopInfo(buses));
+
+
+            return stopInfo;
         } catch (JSONException | IOException e){
             e.printStackTrace();
             return null;
