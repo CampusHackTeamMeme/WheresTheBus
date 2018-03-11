@@ -125,7 +125,6 @@ def insert_operators(conn, operators_data):
 
 
 def import_data(conn):
-
     print("Getting stops JSON")
     stops_resp = requests.get(STOPS_URL, timeout=30)
     stops_data = stops_resp.json()
@@ -143,6 +142,7 @@ def import_data(conn):
     routes_data = routes_resp.json()
 
     insert_routes(conn, routes_data)
+
 
 def main(db_name, should_create_db):
     exists = os.path.isfile(db_name)
