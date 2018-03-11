@@ -8,42 +8,17 @@ class busStops(Resource):
         self.DBfile = file
 
     def get(self):
-        r = request.form.to_dict()
+        r = request.args.to_dict()
         print(r)
 
         conn = sql.connect(self.DBfile)
         c = conn.cursor()
 
-        stopsquery = c.execute(
-            '''SELECT * FROM stops WHERE 
-            lon > ? AND 
-            lon < ? AND 
-            lat > ? AND 
-            lat < ? '''
-            ,(float(r['startLon']), 
-              float(r['endLon']),
-              float(r['startLat']), 
-              float(r['endLat'])))
+        query = c.execute(
+            '''SELECT * FROM stops 
+                INNER JOIN routes_stops ON stops.stop_id = routes_stops.stop_id
+                INNER JOIN routes ON routes_stops.route_id = routes.route_id''')
 
-        keys = ('stop_id', 'name', 'lat', 'lon')
-        toSend = { 'data': [dict( zip(keys, i) ) for i in stopsquery.fetchall()]}
+        keys = ('stop_id', 'name', 'lon', 'lat')
 
-        for stop in toSend['data']:
-            busRoutes = []
-
-            Routesquery = c.execute(
-                '''SELECT route_id FROM routes_stops WHERE
-                stop_id = ?''',
-                (stop['stop_id'],))
-
-            for route_id in Routesquery.fetchall():
-                query = c.execute(
-                    '''SELECT service FROM routes WHERE
-                    route_id = ?
-                    ''', (route_id[0],))
-
-                busRoutes.append(query.fetchall()[0][0])
-
-            stop['busRoutes'] = busRoutes
-
-        return toSend, 200
+        return {'data': [dict(zip(keys, i)) for i in query.fetchall()]}, 200

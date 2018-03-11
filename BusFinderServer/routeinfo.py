@@ -17,21 +17,18 @@ class routeInfo(Resource):
         toSend = {}
 
         for stops in r['stops']:
-            busRoutes = []
-        
-            Routesquery = c.execute(
-                '''SELECT route_id FROM routes_stops WHERE
-                stop_id = ?''',
-                (stops,))
+            query = c.execute(
+                '''SELECT routes.service 
+                FROM routes_stops
+                INNER JOIN routes ON routes_stops.route_id = routes.route_id
+                where routes_stops.stop_id = ?
+                ''', (stops,))
+            
+            data = []
+            for i in query.fetchall():
+                data.append(i[0])
+            data = list(set(data))
 
-            for route_id in Routesquery.fetchall():
-                query = c.execute(
-                    '''SELECT service FROM routes WHERE
-                    route_id = ?
-                    ''', (route_id[0],))
-
-                busRoutes.append(query.fetchall()[0][0])
-
-            toSend[stops] = busRoutes
+            toSend[stops] = data
 
         return toSend, 200
