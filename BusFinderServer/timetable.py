@@ -40,12 +40,14 @@ class TimeTable(Resource):
             bus_service = cells[0].find("a").text
 
             # Get bus operator
-            query = c.execute('''SELECT routes.operator FROM stops 
+            query = c.execute('''SELECT routes.operator FROM stops
             INNER JOIN routes_stops ON stops.stop_id = routes_stops.stop_id
-            INNER JOIN routes ON routes_stops.route_id = routes.route_id
-            WHERE stops.stop_id = ? AND routes.service = ?''', (r['stop'], bus_service))
+             INNER JOIN routes ON routes_stops.route_id = routes.route_id
+             WHERE stops.stop_id = ? AND routes.service = ?''', (r['stop'], bus_service))
 
             bus_operator = query.fetchone()[0]
+
+            bus_service = bus_operator + bus_service
 
             bus_return = re.search(bus_regex, cells[1].text)
             if bus_return is not None:

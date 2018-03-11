@@ -18,7 +18,7 @@ class RouteInfo(Resource):
 
 
         query = c.execute(
-            '''SELECT routes.service 
+            '''SELECT routes.string_bus 
             FROM routes_stops
             INNER JOIN routes ON routes_stops.route_id = routes.route_id
             WHERE routes_stops.stop_id = ?

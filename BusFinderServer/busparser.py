@@ -1,7 +1,6 @@
 import argparse
-import sqlite3
 import os
-import time
+import sqlite3
 
 import requests
 
@@ -34,6 +33,7 @@ def create_stops_and_routes(conn):
         operator TEXT,
         direction TEXT,
         service TEXT,
+        string_bus TEXT,
         FOREIGN KEY (operator) REFERENCES operators(operator_id)
           ON DELETE CASCADE ON UPDATE NO ACTION
     )''')
@@ -98,8 +98,9 @@ def insert_routes(conn, routes_data):
         if count % 10 == 0:
             print("INSERTING ROUTES %d/%d" % (count, routes_length), end="\r")
         c.execute(
-            'INSERT OR REPLACE INTO routes (route_id, desc, operator, direction, service) VALUES (?,?,?,?,?)',
-            (route['id'], route['label'], route['operator'], route['direction'], route['service'])
+            'INSERT OR REPLACE INTO routes (route_id, desc, operator, direction, service, string_bus) VALUES (?,?,?,?,?,?)',
+            (route['id'], route['label'], route['operator'], route['direction'], route['service'],
+             (route['operator'] + route['service']))
         )
         c.executemany(
             'INSERT OR REPLACE INTO routes_stops (route_id, stop_id) VALUES (?,?)',
