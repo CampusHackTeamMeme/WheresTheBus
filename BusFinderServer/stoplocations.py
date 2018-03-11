@@ -8,8 +8,9 @@ class StopLocations(Resource):
         self.DBfile = file
 
     def get(self):
-        r = request.args.to_dict(flat=False)
-        print(r)
+        r = request.args.to_dict()
+        req = r['stops'].strip('[').strip(']').split(',')
+        print(req)
 
         conn = sql.connect(self.DBfile)
         c = conn.cursor()
@@ -17,7 +18,7 @@ class StopLocations(Resource):
         toSend = {}
         keys = ('stop_id', 'lon', 'lat')
 
-        for stop in r['stops']:
+        for stop in req:
             query = c.execute('''
                 SELECT stop_id, lon, lat FROM stops 
                 WHERE stop_id = ?''',
@@ -29,5 +30,4 @@ class StopLocations(Resource):
                 'lat': data['lat']
             }
 
-        print(toSend)
         return toSend, 200
