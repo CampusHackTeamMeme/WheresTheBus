@@ -1,35 +1,32 @@
-package meme.wheresthebus.comms;
+package meme.wheresthebus.comms.request;
 
 import android.os.AsyncTask;
 
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayDeque;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Scanner;
+
+import meme.wheresthebus.comms.ParameterStringBuilder;
+import meme.wheresthebus.comms.data.BusStop;
 
 /**
  * Created by hb on 10/03/2018.
  */
 
-public class BusStops extends AsyncTask<Double, Void, ArrayDeque<BusStop>> {
+public class BusStopRequest extends AsyncTask<Double, Void, ArrayDeque<BusStop>> {
     private static final String busStopServerURL = "http://10.9.156.46:8080/api/busstops";
     private static final double loadFactor = 0.015;
-    public BusStops (){
+    public BusStopRequest(){
 
     }
 

@@ -1,8 +1,6 @@
 package meme.wheresthebus;
 
 import android.Manifest;
-import android.app.ActivityManager;
-import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -11,21 +9,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.IBinder;
-import android.os.Looper;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.content.LocalBroadcastManager;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -37,34 +25,29 @@ import android.view.MenuItem;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
-import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.TabHost;
-import android.widget.TabWidget;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 
-import meme.wheresthebus.comms.BusRoutes;
-import meme.wheresthebus.comms.BusStop;
-import meme.wheresthebus.comms.BusStopInfo;
-import meme.wheresthebus.comms.BusStops;
-import meme.wheresthebus.comms.ParameterStringBuilder;
+import meme.wheresthebus.comms.request.BusStopInfoRequest;
+import meme.wheresthebus.comms.data.BusStop;
+import meme.wheresthebus.comms.data.BusStopInfo;
+import meme.wheresthebus.comms.request.BusStopRequest;
 import meme.wheresthebus.location.LocationService;
 
 import static android.content.Intent.ACTION_GET_CONTENT;
@@ -79,7 +62,10 @@ public class NavigationDrawer extends AppCompatActivity
     private Boolean onLocation;
     private ArrayDeque<Integer> tabHistory;
 
+    private HashSet<BusStop> loaded;
     private HashMap<Marker, BusStop> markers;
+
+    private Intent locationService;
 
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 
@@ -99,6 +85,7 @@ public class NavigationDrawer extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         markers = new HashMap<>();
+        loaded = new HashSet<>();
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_navigation_drawer);
@@ -121,8 +108,10 @@ public class NavigationDrawer extends AppCompatActivity
 
         onLocation = true;
 
+        locationService = new Intent(this, LocationService.class);
+
         //start location service
-        new Thread(() -> startService(new Intent(this, LocationService.class))).start();
+        new Thread(() -> startService(locationService)).start();
 
         //init tabs
         TabHost tabHost = (TabHost) findViewById(R.id.tab_host);
@@ -150,11 +139,10 @@ public class NavigationDrawer extends AppCompatActivity
         tabAnimations(tabHost, map, liveTimes);
     }
 
-
     @Override
     protected void onDestroy() {
+        stopService(locationService);
         super.onDestroy();
-        doUnbindService();
     }
 
     private void tabAnimations(TabHost tabHost, LinearLayout tab1Layout, LinearLayout tab2Layout){
@@ -212,7 +200,7 @@ public class NavigationDrawer extends AppCompatActivity
         }
     }
 
-    private void showMap() {
+    public void showMap() {
         MapFragment map = MapFragment.newInstance();
         FragmentTransaction fragmentTransaction =
                 getFragmentManager().beginTransaction();
@@ -303,6 +291,9 @@ public class NavigationDrawer extends AppCompatActivity
         gmap.setInfoWindowAdapter(bif);
         gmap.setOnMapClickListener(bif);
         gmap.setOnInfoWindowClickListener(bif);
+        gmap.setMaxZoomPreference(16);
+        gmap.setMinZoomPreference(12);
+        gmap.setOnCameraMoveListener(new MapMoveListener(gmap,this));
 
         //set current location pointer
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -347,13 +338,14 @@ public class NavigationDrawer extends AppCompatActivity
         this.runOnUiThread(() -> addStopsAsync(gmap, position, zoom));
     }
 
-    private void addStopsAsync(GoogleMap gmap, LatLng position, double zoom){
+    public void addStopsAsync(GoogleMap gmap, LatLng position, double zoom){
         try {
-            ArrayDeque<BusStop> stops = new BusStops().execute(position.latitude, position.longitude, zoom).get();
+            ArrayDeque<BusStop> stops = new BusStopRequest().execute(position.latitude, position.longitude, zoom).get();
             for(BusStop b : stops){
-                //System.out.println(b.name + " " + b.position.longitude + " " + b.position.latitude);
-                MarkerOptions mo = new MarkerOptions().position(b.position).title(b.name);
-                markers.put(gmap.addMarker(mo), b);
+                if(loaded.add(b)) {
+                    MarkerOptions mo = new MarkerOptions().position(b.position).title(b.name);
+                    markers.put(gmap.addMarker(mo), b);
+                }
             }
         } catch (ExecutionException | InterruptedException e){
             e.printStackTrace();
@@ -382,7 +374,7 @@ public class NavigationDrawer extends AppCompatActivity
     private void buildBusStopInfo(BusStop bs){
         //get info
         try {
-            HashMap<String, BusStopInfo> busStopInfo = new BusRoutes().execute(bs).get();
+            HashMap<String, BusStopInfo> busStopInfo = new BusStopInfoRequest().execute(bs).get();
             bs.addInfo(busStopInfo.get(bs.id));
         } catch(Exception e){
             return;

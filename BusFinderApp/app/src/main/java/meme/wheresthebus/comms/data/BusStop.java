@@ -1,4 +1,4 @@
-package meme.wheresthebus.comms;
+package meme.wheresthebus.comms.data;
 
 import com.google.android.gms.maps.model.LatLng;
 

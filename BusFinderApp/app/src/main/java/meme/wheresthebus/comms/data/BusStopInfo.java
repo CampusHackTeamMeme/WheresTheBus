@@ -1,4 +1,4 @@
-package meme.wheresthebus.comms;
+package meme.wheresthebus.comms.data;
 
 import java.util.ArrayDeque;
 

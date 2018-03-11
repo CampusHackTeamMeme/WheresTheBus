@@ -5,6 +5,8 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
+import meme.wheresthebus.comms.data.BusStop;
+
 /**
  * Created by hb on 10/03/2018.
  */

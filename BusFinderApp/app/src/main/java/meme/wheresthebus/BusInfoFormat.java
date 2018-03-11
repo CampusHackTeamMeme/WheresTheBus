@@ -1,6 +1,5 @@
 package meme.wheresthebus;
 
-import android.content.Context;
 import android.view.View;
 import android.widget.TextView;
 
@@ -8,10 +7,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
-import java.util.ArrayDeque;
 import java.util.HashMap;
 
-import meme.wheresthebus.comms.BusStop;
+import meme.wheresthebus.comms.data.BusStop;
 
 /**
  * Created by hb on 11/03/2018.
