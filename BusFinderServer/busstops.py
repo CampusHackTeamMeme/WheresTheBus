@@ -1,9 +1,9 @@
 from flask_restful import Resource
 from flask import request
 import sqlite3 as sql
-from werkzeug.datastructures import ImmutableMultiDict
 
-class busStops(Resource):
+
+class BusStops(Resource):
     def __init__(self, file):
         self.DBfile = file
 

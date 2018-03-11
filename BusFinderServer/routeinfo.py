@@ -1,9 +1,9 @@
 from flask_restful import Resource
 from flask import request
 import sqlite3 as sql
-from werkzeug.datastructures import ImmutableMultiDict
 
-class routeInfo(Resource):
+
+class RouteInfo(Resource):
     def __init__(self, file):
         self.DBfile = file
 
@@ -21,9 +21,9 @@ class routeInfo(Resource):
                 '''SELECT routes.service 
                 FROM routes_stops
                 INNER JOIN routes ON routes_stops.route_id = routes.route_id
-                where routes_stops.stop_id = ?
+                WHERE routes_stops.stop_id = ?
                 ''', (stops,))
-            
+
             data = []
             for i in query.fetchall():
                 data.append(i[0])
