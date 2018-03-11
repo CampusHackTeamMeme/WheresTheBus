@@ -15,6 +15,7 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/gmaps_api" />
+
         <activity
             android:name=".NavigationDrawer"
             android:label="@string/app_name"
@@ -25,9 +26,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".location.LocationService"
+
+        <service
+            android:name=".location.LocationService"
             android:enabled="true"
-            android:label="Where's the bus location service"/>
+            android:label="Where&apos;s the bus location service" />
+
     </application>
 
 </manifest>

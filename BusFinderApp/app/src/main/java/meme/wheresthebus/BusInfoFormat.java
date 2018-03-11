@@ -17,7 +17,7 @@ import meme.wheresthebus.comms.BusStop;
  * Created by hb on 11/03/2018.
  */
 
-public class BusInfoFormat implements GoogleMap.InfoWindowAdapter, GoogleMap.OnMapClickListener{
+public class BusInfoFormat implements GoogleMap.InfoWindowAdapter, GoogleMap.OnMapClickListener, GoogleMap.OnInfoWindowClickListener {
     private HashMap<Marker, BusStop> markers;
     private NavigationDrawer context;
 
@@ -52,6 +52,7 @@ public class BusInfoFormat implements GoogleMap.InfoWindowAdapter, GoogleMap.OnM
         tvLng.setText("Bus Stop ID:"+ bs.id);
 
         // Returning the view containing InfoWindow contents
+
         return v;
     }
 
@@ -60,5 +61,10 @@ public class BusInfoFormat implements GoogleMap.InfoWindowAdapter, GoogleMap.OnM
         for(Marker m : markers.keySet()){
             m.hideInfoWindow();
         }
+    }
+
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        context.showBusInfo(markers.get(marker));
     }
 }

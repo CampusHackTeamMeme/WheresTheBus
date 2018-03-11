@@ -20,6 +20,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -33,6 +34,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
+import android.widget.FrameLayout;
+import android.widget.GridLayout;
+import android.widget.LinearLayout;
+import android.widget.TabHost;
+import android.widget.TabWidget;
+import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -52,6 +62,7 @@ import java.util.concurrent.ExecutionException;
 
 import meme.wheresthebus.comms.BusRoutes;
 import meme.wheresthebus.comms.BusStop;
+import meme.wheresthebus.comms.BusStopInfo;
 import meme.wheresthebus.comms.BusStops;
 import meme.wheresthebus.comms.ParameterStringBuilder;
 import meme.wheresthebus.location.LocationService;
@@ -66,6 +77,7 @@ public class NavigationDrawer extends AppCompatActivity
     private Boolean locationBound;
     private ServiceConnection locationConnection;
     private Boolean onLocation;
+    private ArrayDeque<Integer> tabHistory;
 
     private HashMap<Marker, BusStop> markers;
 
@@ -112,13 +124,70 @@ public class NavigationDrawer extends AppCompatActivity
         //start location service
         new Thread(() -> startService(new Intent(this, LocationService.class))).start();
 
+        //init tabs
+        TabHost tabHost = (TabHost) findViewById(R.id.tab_host);
+        tabHost.setup();
+
+        //add map tab
+        TabHost.TabSpec spec = tabHost.newTabSpec("Map");
+        spec.setContent(R.id.page);
+        spec.setIndicator("Map");
+        tabHost.addTab(spec);
+
+        //add routes tab
+        spec = tabHost.newTabSpec("Live Times");
+        spec.setContent(R.id.routes);
+        spec.setIndicator("Live Times");
+        tabHost.addTab(spec);
+
+        tabHistory = new ArrayDeque<>();
+
+        //pull tab ids
+        LinearLayout map = findViewById(R.id.page);
+        LinearLayout liveTimes = findViewById(R.id.routes);
+
+        //set tab animations
+        tabAnimations(tabHost, map, liveTimes);
     }
 
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        doUnbindService();
+    }
 
+    private void tabAnimations(TabHost tabHost, LinearLayout tab1Layout, LinearLayout tab2Layout){
+        tabHost.setOnTabChangedListener(new TabHost.OnTabChangeListener() {
+
+            public void onTabChanged(String tabId) {
+                tab1Layout.setAnimation(outToLeftAnimation());
+                tab2Layout.setAnimation(outToLeftAnimation());
+            }
+        });
+    }
+
+    public Animation inFromRightAnimation() {
+
+        Animation inFromRight = new TranslateAnimation(
+                Animation.RELATIVE_TO_PARENT, +1.0f,
+                Animation.RELATIVE_TO_PARENT, 0.0f,
+                Animation.RELATIVE_TO_PARENT, 0.0f,
+                Animation.RELATIVE_TO_PARENT, 0.0f);
+        inFromRight.setDuration(500);
+        inFromRight.setInterpolator(new AccelerateInterpolator());
+        return inFromRight;
+    }
+
+    public Animation outToLeftAnimation() {
+        Animation outtoLeft = new TranslateAnimation(
+                Animation.RELATIVE_TO_PARENT, 0.0f,
+                Animation.RELATIVE_TO_PARENT, -1.0f,
+                Animation.RELATIVE_TO_PARENT, 0.0f,
+                Animation.RELATIVE_TO_PARENT, 0.0f);
+        outtoLeft.setDuration(500);
+        outtoLeft.setInterpolator(new AccelerateInterpolator());
+        return outtoLeft;
     }
 
     private void initLocationConnection() {
@@ -164,7 +233,12 @@ public class NavigationDrawer extends AppCompatActivity
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+            if(tabHistory.isEmpty()) {
+                super.onBackPressed();
+            } else {
+                TabHost tabs = findViewById(R.id.tab_host);
+                tabs.setCurrentTab(tabHistory.pop());
+            }
         }
     }
 
@@ -192,7 +266,10 @@ public class NavigationDrawer extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_map) {
-            getLimits();
+            TabHost host = findViewById(R.id.tab_host);
+            if(host.getCurrentTab() != 0)
+            tabHistory.add(host.getCurrentTab());
+            host.setCurrentTab(0);
         } else if (id == R.id.nav_settings) {
 
 
@@ -225,6 +302,7 @@ public class NavigationDrawer extends AppCompatActivity
         gmap = googleMap;
         gmap.setInfoWindowAdapter(bif);
         gmap.setOnMapClickListener(bif);
+        gmap.setOnInfoWindowClickListener(bif);
 
         //set current location pointer
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -289,8 +367,38 @@ public class NavigationDrawer extends AppCompatActivity
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        BusStop bs = markers.get(marker);
-        new BusRoutes().execute(bs);
         return false;
+    }
+
+    public void showBusInfo(BusStop bs){
+        TabHost tabs = findViewById(R.id.tab_host);
+        tabHistory.push(tabs.getCurrentTab());
+        tabs.setCurrentTabByTag("Live Times");
+
+        //build current tab
+        buildBusStopInfo(bs);
+    }
+
+    private void buildBusStopInfo(BusStop bs){
+        //get info
+        try {
+            HashMap<String, BusStopInfo> busStopInfo = new BusRoutes().execute(bs).get();
+            bs.addInfo(busStopInfo.get(bs.id));
+        } catch(Exception e){
+            return;
+        }
+        //set name
+        TextView name = new TextView(this);
+        name.setText(bs.name);
+
+        //add bus routes
+        GridLayout layout = findViewById(R.id.busStopInfo);
+        layout.addView(name, new GridLayout.LayoutParams());
+
+        for(String bus : bs.info.services){
+            TextView text = new TextView(this);
+            text.setText(bus);
+            layout.addView(text);
+        }
     }
 }
