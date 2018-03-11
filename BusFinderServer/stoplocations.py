@@ -1,6 +1,7 @@
+import sqlite3 as sql
+
 from flask import request
 from flask_restful import Resource
-import sqlite3 as sql
 
 
 class StopLocations(Resource):
@@ -22,7 +23,7 @@ class StopLocations(Resource):
             query = c.execute('''
                 SELECT stop_id, lon, lat FROM stops 
                 WHERE stop_id = ?''',
-                (stop,))
+                              (stop,))
             data = dict(zip(keys, query.fetchall()[0]))
 
             toSend[data['stop_id']] = {
