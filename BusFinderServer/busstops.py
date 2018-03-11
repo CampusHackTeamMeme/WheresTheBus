@@ -1,6 +1,7 @@
-from flask_restful import Resource
-from flask import request
 import sqlite3 as sql
+
+from flask import request
+from flask_restful import Resource
 
 
 class BusStops(Resource):
@@ -12,7 +13,7 @@ class BusStops(Resource):
 
         conn = sql.connect(self.DBfile)
         c = conn.cursor()
-        
+
         sLon, eLon = float(r['startLon']), float(r['endLon'])
         sLat, eLat = float(r['startLat']), float(r['endLat'])
 
@@ -24,7 +25,7 @@ class BusStops(Resource):
                 AND lon < ?
                 AND lat > ?
                 AND lat < ?''',
-                (sLon, eLon, sLat, eLat))
+            (sLon, eLon, sLat, eLat))
 
         keys = ('stop_id', 'name', 'lon', 'lat')
 

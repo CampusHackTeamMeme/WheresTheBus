@@ -1,5 +1,7 @@
 package meme.wheresthebus.comms.data;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import java.util.ArrayDeque;
 
 /**
@@ -8,9 +10,9 @@ import java.util.ArrayDeque;
 
 public class BusRoute {
     public String name;
-    public ArrayDeque<String> route;
+    public ArrayDeque<LatLng> route;
 
-    public BusRoute (String name, ArrayDeque<String> route){
+    public BusRoute (String name, ArrayDeque<LatLng> route){
         this.route = route;
     }
 }
