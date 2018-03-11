@@ -26,7 +26,7 @@ import java.util.Scanner;
  * Created by hb on 10/03/2018.
  */
 
-public class BusStops extends AsyncTask<Double, Void, ArrayDeque<BusStops.BusStop>> {
+public class BusStops extends AsyncTask<Double, Void, ArrayDeque<BusStop>> {
     private static final String busStopServerURL = "http://10.9.156.46:8080/api/busstops";
     private static final double loadFactor = 0.015;
     public BusStops (){
@@ -88,7 +88,8 @@ public class BusStops extends AsyncTask<Double, Void, ArrayDeque<BusStops.BusSto
                 JSONObject stopAsJSON = response.getJSONObject(i);
                 BusStop stop = new BusStop(stopAsJSON.getString("name"),
                         new LatLng(stopAsJSON.getDouble("lon"),
-                            stopAsJSON.getDouble("lat")));
+                            stopAsJSON.getDouble("lat")),
+                        stopAsJSON.getString("stop_id"));
                 stops.add(stop);
             }
 
@@ -96,16 +97,6 @@ public class BusStops extends AsyncTask<Double, Void, ArrayDeque<BusStops.BusSto
         } catch (JSONException | IOException e){
             e.printStackTrace();
             return null;
-        }
-    }
-
-    public class BusStop {
-        public String name;
-        public LatLng position;
-
-        public BusStop(String name, LatLng position){
-            this.name = name;
-            this.position = position;
         }
     }
 }

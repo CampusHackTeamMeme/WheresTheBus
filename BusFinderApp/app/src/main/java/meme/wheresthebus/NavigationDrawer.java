@@ -39,14 +39,19 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 
+import meme.wheresthebus.comms.BusRoutes;
+import meme.wheresthebus.comms.BusStop;
 import meme.wheresthebus.comms.BusStops;
 import meme.wheresthebus.comms.ParameterStringBuilder;
 import meme.wheresthebus.location.LocationService;
@@ -54,13 +59,15 @@ import meme.wheresthebus.location.LocationService;
 import static android.content.Intent.ACTION_GET_CONTENT;
 
 public class NavigationDrawer extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
+        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, GoogleMap.OnMapLoadedCallback, GoogleMap.OnMarkerClickListener {
 
     private GoogleMap gmap;
     private LocationService location;
     private Boolean locationBound;
     private ServiceConnection locationConnection;
     private Boolean onLocation;
+
+    private HashMap<Marker, BusStop> markers;
 
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 
@@ -79,6 +86,8 @@ public class NavigationDrawer extends AppCompatActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        markers = new HashMap<>();
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_navigation_drawer);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -185,7 +194,7 @@ public class NavigationDrawer extends AppCompatActivity
         if (id == R.id.nav_map) {
             getLimits();
         } else if (id == R.id.nav_settings) {
-            //addBusStops();
+
 
         } else if (id == R.id.nav_share) {
             try {
@@ -212,7 +221,10 @@ public class NavigationDrawer extends AppCompatActivity
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        BusInfoFormat bif = new BusInfoFormat(markers, this);
         gmap = googleMap;
+        gmap.setInfoWindowAdapter(bif);
+        gmap.setOnMapClickListener(bif);
 
         //set current location pointer
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -259,10 +271,11 @@ public class NavigationDrawer extends AppCompatActivity
 
     private void addStopsAsync(GoogleMap gmap, LatLng position, double zoom){
         try {
-            ArrayDeque<BusStops.BusStop> stops = new BusStops().execute(position.latitude, position.longitude, zoom).get();
-            for(BusStops.BusStop b : stops){
+            ArrayDeque<BusStop> stops = new BusStops().execute(position.latitude, position.longitude, zoom).get();
+            for(BusStop b : stops){
                 //System.out.println(b.name + " " + b.position.longitude + " " + b.position.latitude);
-                gmap.addMarker(new MarkerOptions().position(b.position).title(b.name));
+                MarkerOptions mo = new MarkerOptions().position(b.position).title(b.name);
+                markers.put(gmap.addMarker(mo), b);
             }
         } catch (ExecutionException | InterruptedException e){
             e.printStackTrace();
@@ -272,5 +285,12 @@ public class NavigationDrawer extends AppCompatActivity
     @Override
     public void onMapLoaded() {
         //addBusStops(gmap.getCameraPosition().target,gmap.getCameraPosition().zoom);
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        BusStop bs = markers.get(marker);
+        new BusRoutes().execute(bs);
+        return false;
     }
 }

@@ -2,6 +2,7 @@ package meme.wheresthebus.comms;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -23,6 +24,21 @@ public class ParameterStringBuilder {
         String resultString = result.toString();
         return resultString.length() > 0
                 ? "?" + resultString.substring(0, resultString.length() - 1)
+                : resultString;
+    }
+
+    public static String getStopIDs (HashMap<String, BusStop> stops) throws UnsupportedEncodingException {
+        StringBuilder result = new StringBuilder();
+        result.append("stops={[");
+
+        for (String stopID : stops.keySet()) {
+            result.append(URLEncoder.encode(stopID, "UTF-8"));
+            result.append(",");
+        }
+
+        String resultString = result.toString();
+        return resultString.length() > 0
+                ? "?" + resultString.substring(0, resultString.length() - 1) + "]}"
                 : resultString;
     }
 }

@@ -27,7 +27,7 @@ import java.util.Scanner;
  * Created by hb on 10/03/2018.
  */
 
-public class BusRoutes extends AsyncTask<CameraPosition, Void, ArrayDeque<BusRoutes>> {
+public class BusRoutes extends AsyncTask<BusStop, Void, HashMap<String, BusStop>> {
     private static final String routeinfoURL = "http://10.9.156.46:8080/api/routeinfo";
     private static final double loadFactor = 0.015;
     public BusRoutes (){
@@ -35,18 +35,23 @@ public class BusRoutes extends AsyncTask<CameraPosition, Void, ArrayDeque<BusRou
     }
 
     @Override
-    protected ArrayDeque<BusRoutes> doInBackground(CameraPosition... cameraPositions) {
-        ArrayDeque<BusRoutes> result = new ArrayDeque<>();
+    protected HashMap<String, BusStop> doInBackground(BusStop... busStops) {
+        HashMap<String, BusStop> stops = new HashMap<>();
 
+        for(int i = 0; i < busStops.length; i++){
+            stops.put(busStops[i].id, busStops[i]);
+        }
 
-        return result;
+        HashMap<String, BusStop> stopInfo = executeBusStopRequest(stops);
+
+        return stops;
     }
 
 
 
-    private ArrayDeque<BusStop> executeBusStopRequest(HashMap<String, String> params){
+    private HashMap<String, BusStop> executeBusStopRequest(HashMap<String, BusStop> stops){
         try {
-            URL url = new URL(routeinfoURL + ParameterStringBuilder.getParamsString(params));
+            URL url = new URL(routeinfoURL + ParameterStringBuilder.getStopIDs(stops));
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
             Scanner scanner = new Scanner(new InputStreamReader(connection.getInputStream()));
@@ -59,13 +64,18 @@ public class BusRoutes extends AsyncTask<CameraPosition, Void, ArrayDeque<BusRou
             connection.disconnect();
 
             JSONObject fullResponse = new JSONObject(contents.toString());
-            JSONArray response = fullResponse.getJSONArray("stops");
-            System.out.print(response);
-            ArrayDeque<BusStop> stops = new ArrayDeque<>();
+            Iterator<String> keyItr = fullResponse.keys();
 
+            while(keyItr.hasNext()){
+                String key = keyItr.next();
+                ArrayDeque<String> buses = new ArrayDeque<>();
+                JSONArray jsonBuses = fullResponse.getJSONArray("key");
+                for(int i = 0; i < jsonBuses.length(); i++){
+                    buses.add(jsonBuses.getString(i));
+                }
+                stops.get(key).addInfo(new BusStopInfo(buses));
+            }
 
-
-            System.out.print(stops);
             return stops;
         } catch (JSONException | IOException e){
             e.printStackTrace();
@@ -73,13 +83,7 @@ public class BusRoutes extends AsyncTask<CameraPosition, Void, ArrayDeque<BusRou
         }
     }
 
-    public class BusStop {
-        public String name;
-        public LatLng position;
+    public class BusRoute{
 
-        public BusStop(String name, LatLng position){
-            this.name = name;
-            this.position = position;
-        }
     }
 }
