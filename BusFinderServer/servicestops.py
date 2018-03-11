@@ -24,7 +24,7 @@ class ServiceStops(Resource):
             query = c.execute('''SELECT DISTINCT stops.stop_id, routes.operator FROM stops 
             INNER JOIN routes_stops ON stops.stop_id = routes_stops.stop_id
             INNER JOIN routes ON routes_stops.route_id = routes.route_id
-            WHERE service = ?''', (r['service'],))
+            WHERE routes.string_bus = ?''', (r['service'],))
 
         data = {"service": []}
         for i in query.fetchall():
@@ -41,6 +41,6 @@ class ServiceStops(Resource):
                     })
             else:
                 if not list_exits:
-                    data["service"].append(i[1] + i[0])
+                    data["service"].append(i[0])
 
         return data, 200
