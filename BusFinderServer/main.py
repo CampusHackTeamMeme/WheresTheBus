@@ -16,4 +16,5 @@ api.add_resource(RouteInfo, '/api/routeinfo', resource_class_args=(DBfile,))
 api.add_resource(TimeTable, '/api/timetable', resource_class_args=(DBfile,))
 api.add_resource(serviceStops, '/api/servicestops', resource_class_args=(DBfile,))
 
-app.run(host='0.0.0.0', port=8080, debug=True)
+if __name__ == "__main__":
+	app.run(host='0.0.0.0', port=8080, debug=False, threaded=True)

@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from flask import request
 from flask_restful import Resource
+from datetime import datetime, timedelta
 
 BUS_STOP_URL = "http://nextbuses.mobi/WebView/BusStopSearch/BusStopSearchResults?id=%s"
 
@@ -35,13 +36,21 @@ class TimeTable(Resource):
             bus_service = cells[0].find("a").text
             print(cells[1].text)
             bus_return = re.search(bus_regex, cells[1].text)
-            bus_dest = bus_return.group('dest')
-            bus_time = bus_return.group('time')
+            if bus_return is not None:
+                bus_dest = bus_return.group('dest')
+                bus_time = bus_return.group('time')
+            else:
+                bus_regex = "(?P<dest>.*)in\s(?P<time>[0-9]{0,3})\s"
+                bus_return = re.search(bus_regex, cells[1].text)
+                bus_dest = bus_return.group('dest')
+                bus_time = (datetime.now() + timedelta(minutes = int(bus_return.group('time')))).strftime("%H:%M")
+
             bus_dict = {
-                'service': bus_service,
-                'time': bus_time,
-                'dest': bus_dest
-            }
+                    'service': bus_service,
+                    'time': bus_time,
+                    'dest': bus_dest
+                }
+
             data.append(bus_dict)
 
         to_send[r['stop']] = data
