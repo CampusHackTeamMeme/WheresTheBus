@@ -8,7 +8,7 @@ class RouteInfo(Resource):
         self.DBfile = file
 
     def get(self):
-        r = request.form.to_dict(flat=False)
+        r = request.args.to_dict()
         print(r)
 
         conn = sql.connect(self.DBfile)
@@ -16,19 +16,19 @@ class RouteInfo(Resource):
 
         toSend = {}
 
-        for stops in r['stops']:
-            query = c.execute(
-                '''SELECT routes.service 
-                FROM routes_stops
-                INNER JOIN routes ON routes_stops.route_id = routes.route_id
-                WHERE routes_stops.stop_id = ?
-                ''', (stops,))
 
-            data = []
-            for i in query.fetchall():
-                data.append(i[0])
-            data = list(set(data))
+        query = c.execute(
+            '''SELECT routes.service 
+            FROM routes_stops
+            INNER JOIN routes ON routes_stops.route_id = routes.route_id
+            WHERE routes_stops.stop_id = ?
+            ''', (r['stop'],))
 
-            toSend[stops] = data
+        data = []
+        for i in query.fetchall():
+            data.append(i[0])
+        data = list(set(data))
+
+        toSend['stop'] = data
 
         return toSend, 200
