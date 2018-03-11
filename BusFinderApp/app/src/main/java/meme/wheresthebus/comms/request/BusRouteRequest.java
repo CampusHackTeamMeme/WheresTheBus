@@ -31,7 +31,7 @@ public class BusRouteRequest extends AsyncTask<String, Void, BusRoute> {
     @Override
     protected BusRoute doInBackground(String... stopID) {
         try {
-            URL url = new URL(routeURL + "?service=" + stopID[0]);
+            URL url = new URL(routeURL + "?service=" + ParameterStringBuilder.unformatOperator(stopID[0]));
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
             Scanner scanner = new Scanner(new InputStreamReader(connection.getInputStream()));

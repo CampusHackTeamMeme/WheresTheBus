@@ -59,6 +59,7 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -70,6 +71,8 @@ import meme.wheresthebus.comms.request.BusStopInfoRequest;
 import meme.wheresthebus.comms.data.BusStop;
 import meme.wheresthebus.comms.data.BusStopInfo;
 import meme.wheresthebus.comms.request.BusStopRequest;
+import meme.wheresthebus.comms.request.ParameterStringBuilder;
+import meme.wheresthebus.comms.request.TimetableRequest;
 import meme.wheresthebus.location.LocationService;
 import meme.wheresthebus.notify.Reminder;
 
@@ -434,9 +437,11 @@ public class NavigationDrawer extends AppCompatActivity
     //@RequiresApi(api = Build.VERSION_CODES.O)
     private void buildBusStopInfo(BusStop bs){
         //get info
+        HashMap<String, ArrayList<String>> times;
         try {
             HashMap<String, BusStopInfo> busStopInfo = new BusStopInfoRequest().execute(bs).get();
             bs.addInfo(busStopInfo.get(bs.id));
+            times = new TimetableRequest().execute(bs).get();
         } catch(Exception e){
             return;
         }
@@ -455,8 +460,19 @@ public class NavigationDrawer extends AppCompatActivity
                     loadRoute((String) ((Button) v).getText());
                 }
             });
-            stop.setText(bus);
+            stop.setText(ParameterStringBuilder.formatOperator(bus));
             layout.addView(stop);
+            String textTimes = "";
+            if(times.get(bus) != null){
+                for(String s : times.get(bs.id)){
+                    textTimes += s + " ";
+                }
+            } else {
+                textTimes = "";
+            }
+            TextView tv = new TextView(this);
+            tv.setText(textTimes);
+            //layout.addView(tv);
         }
 
     }

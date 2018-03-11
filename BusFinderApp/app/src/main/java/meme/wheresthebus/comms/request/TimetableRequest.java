@@ -12,6 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Scanner;
 
 import meme.wheresthebus.comms.data.BusStop;
@@ -44,40 +45,35 @@ public class TimetableRequest extends AsyncTask<BusStop, Void, HashMap<String, A
 
             while (scanner.hasNext()) {
                 contents.append(scanner.nextLine());
-
             }
 
             Timetable key = new Timetable();
 
-            JSONObject fullResponse = new JSONObject(contents.toString());
+            JSONObject fullResponse = new JSONObject(contents.toString()).getJSONObject(busStops[0].id);
 
-            JSONArray servicesAndTimes = fullResponse.getJSONArray(busStops[0].id);
+            Iterator<String> keys = fullResponse.keys();
 
-            for(int i=0;i<servicesAndTimes.length();i++){
-                ArrayList<String> times = new ArrayList<String>();
-                JSONArray timesJSON = (
-                        (JSONObject)servicesAndTimes.get(0)).
-                        getJSONArray(((JSONObject) servicesAndTimes.
-                                get(0)).getString("time")
-                        );
-                for (int j=0;j<timesJSON.length();j++){
-                    times.add(timesJSON.get(j).toString());
+            HashMap<String, ArrayList<String>> finalTimes = new HashMap<>();
+
+            System.out.println(fullResponse.toString());
+            while(keys.hasNext()) {
+                String current = keys.next();
+                JSONArray times = fullResponse.getJSONObject(current).getJSONArray("time");
+                ArrayList<String> strTimes = new ArrayList<String>();
+                for (int i = 0; i < times.length(); i++) {
+                    strTimes.add(i,times.getString(i));
                 }
-
-                result.put(servicesAndTimes.get(i).toString(), times);
-
-
+                finalTimes.put(current, strTimes);
             }
 
 
-            HashMap<String, BusStopInfo> stopInfo = new HashMap<>();
 
             //System.out.print(full);
 
 
 
 
-            return result;
+            return finalTimes;
             //System.err.print(stops);
         } catch (IOException e) {
             e.printStackTrace();

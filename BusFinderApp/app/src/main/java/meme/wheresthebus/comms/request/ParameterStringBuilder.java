@@ -58,4 +58,32 @@ public class ParameterStringBuilder {
                 ? "[" + resultString.substring(0, resultString.length() - 1) + "]"
                 : resultString;
     }
+
+    public static String formatOperator(String in){
+        String[] inter = in.split(" ");
+        switch (inter[0]) {
+            case "BLUS" : inter[0] = "Bluestar";
+                          break;
+            case "FHAM" : inter[0] = "First Hampshire";
+                          break;
+            case "UNIL" : inter[0] = "Unilink";
+                          break;
+        }
+
+        return inter[0] + " " + inter[1];
+    }
+
+    public static String unformatOperator(String in){
+        String[] inter = in.split(" ");
+        switch (inter[0]) {
+            case "Bluestar" : inter[0] = "BLUS";
+                break;
+            case "First Hampshire" : inter[0] = "FHAM";
+                break;
+            case "Unilink" : inter[0] = "UNIL";
+                break;
+        }
+
+        return inter[0] + " " + inter[1];
+    }
 }
