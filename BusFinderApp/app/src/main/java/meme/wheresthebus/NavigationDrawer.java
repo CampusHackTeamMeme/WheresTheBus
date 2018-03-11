@@ -416,7 +416,12 @@ public class NavigationDrawer extends AppCompatActivity
         layout.removeAllViews();
         for(String bus : bs.info.services){
             Button stop = new Button(this);
-
+            stop.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //Harry
+                }
+            });
             stop.setText(bus);
             layout.addView(stop);
         }
