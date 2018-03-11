@@ -21,4 +21,18 @@ public class BusStop {
     public void addInfo(BusStopInfo info){
         this.info = info;
     }
+
+    @Override
+    public int hashCode(){
+        return id.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other){
+        if(other instanceof BusStop){
+            return this.hashCode() == other.hashCode();
+        } else {
+            return false;
+        }
+    }
 }
