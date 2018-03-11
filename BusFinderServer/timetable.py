@@ -1,4 +1,5 @@
 import re
+import sqlite3
 
 import requests
 from bs4 import BeautifulSoup
@@ -30,10 +31,22 @@ class TimeTable(Resource):
 
         data = {}
 
+        conn = sqlite3.connect(self.DBfile)
+        c = conn.cursor()
+
         for row in bus_stops_rows:
             cells = row.find_all("td")
             bus_regex = "(?P<dest>.*)at\s(?P<time>\d\d:\d\d)"
             bus_service = cells[0].find("a").text
+
+            # Get bus operator
+            query = c.execute('''SELECT routes.operator FROM stops 
+            INNER JOIN routes_stops ON stops.stop_id = routes_stops.stop_id
+            INNER JOIN routes ON routes_stops.route_id = routes.route_id
+            WHERE stops.stop_id = ? AND routes.service = ?''', (r['stop'], bus_service))
+
+            bus_operator = query.fetchone()[0]
+
             bus_return = re.search(bus_regex, cells[1].text)
             if bus_return is not None:
                 bus_dest = bus_return.group('dest')
@@ -52,6 +65,7 @@ class TimeTable(Resource):
 
             data.setdefault(bus_service, {}).setdefault("time", []).append(bus_time)
             data[bus_service].setdefault("destination", bus_dest)
+            data[bus_service].setdefault("operator", bus_operator)
 
         to_send[r['stop']] = data
 
