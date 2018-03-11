@@ -22,7 +22,7 @@ class TimeTable(Resource):
         to_send = {}
 
         if not bus_stops_table:
-            to_send['error'] = "No Bus Times Available"
+            to_send[r['stop']] = [{'error' : "No Bus Times Available"}]
             return to_send, 200
 
         bus_stops_rows = bus_stops_table.find_all("tr")
