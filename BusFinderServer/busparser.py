@@ -56,12 +56,24 @@ def create_stops_and_routes(conn):
     conn.commit()
 
 
+def create_delays(conn):
+    c = conn.cursor()
+    c.execute('''
+    CREATE TABLE delays(
+        service TEXT PRIMARY KEY NOT NULL,
+        time REAL,
+        delay REAL
+    )''')
+
+
 def create_db(conn):
     create_stops_and_routes(conn)
+    create_delays(conn)
 
 
 def delete_db(conn):
     delete_stops_and_routes(conn)
+    delete_delays(conn)
 
 
 def delete_stops_and_routes(conn):
@@ -69,6 +81,12 @@ def delete_stops_and_routes(conn):
     c.execute('''DROP TABLE stops''')
     c.execute('''DROP TABLE routes''')
     c.execute('''DROP TABLE routes_stops''')
+    conn.commit()
+
+
+def delete_delays(conn):
+    c = conn.cursor()
+    c.execute('''DROP TABLE delays''')
     conn.commit()
 
 
@@ -100,7 +118,7 @@ def insert_routes(conn, routes_data):
         c.execute(
             'INSERT OR REPLACE INTO routes (route_id, desc, operator, direction, service, string_bus) VALUES (?,?,?,?,?,?)',
             (route['id'], route['label'], route['operator'], route['direction'], route['service'],
-             (route['operator'] + route['service']))
+             (route['operator'] + ' ' + route['service']))
         )
         c.executemany(
             'INSERT OR REPLACE INTO routes_stops (route_id, stop_id) VALUES (?,?)',
