@@ -60,8 +60,8 @@ def create_delays(conn):
     c = conn.cursor()
     c.execute('''
     CREATE TABLE delays(
-        service TEXT PRIMARY KEY NOT NULL,
-        time REAL,
+        service TEXT,
+        unix REAL PRIMARY KEY NOT NULL,
         delay REAL
     )''')
 
