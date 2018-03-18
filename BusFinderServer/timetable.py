@@ -15,7 +15,7 @@ class TimeTable(Resource):
         self.DBfile = file
 
     def get(self):
-        r = request.args.to_dict()
+        r = request.form.to_dict()
 
         html = requests.get(BUS_STOP_URL % r['stop'])
         parsed_html = BeautifulSoup(html.text, "lxml")

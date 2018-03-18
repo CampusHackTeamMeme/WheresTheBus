@@ -9,7 +9,7 @@ class StopLocations(Resource):
         self.DBfile = file
 
     def get(self):
-        r = request.args.to_dict()
+        r = request.form.to_dict()
         req = r['stops'].strip('[').strip(']').split(',')
         print(req)
 

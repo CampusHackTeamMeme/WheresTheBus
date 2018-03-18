@@ -12,7 +12,7 @@ class Delays(Resource):
         self.DBfile = file
 
     def put(self):
-        r = request.args.to_dict()
+        r = request.form.to_dict()
         print(r)
 
         conn = sql.connect(self.DBfile)
@@ -24,7 +24,7 @@ class Delays(Resource):
         conn.commit()
 
     def get(self):
-        r = request.args.to_dict()
+        r = request.form.to_dict()
         print(r)
 
         conn = sql.connect(self.DBfile)

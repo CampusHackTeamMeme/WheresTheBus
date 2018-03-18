@@ -9,7 +9,7 @@ class ServiceStops(Resource):
         self.DBfile = file
 
     def get(self):
-        r = request.args.to_dict()
+        r = request.form.to_dict()
         print(r)
 
         conn = sql.connect(self.DBfile)
