@@ -1,32 +1,33 @@
 import sqlite3 as sql
 
-from flask import request
-from flask_restful import Resource
-
+from flask_restful import Resource, reqparse
 
 class BusStops(Resource):
     def __init__(self, file):
         self.DBfile = file
 
+        self.getParser = reqparse.RequestParser(bundle_errors=True)
+        self.getParser.add_argument('startLon', type=float, required=True, location='form')
+        self.getParser.add_argument('endLon', type=float, required=True, location='form')
+        self.getParser.add_argument('startLat', type=float, required=True, location='form')
+        self.getParser.add_argument('endLat', type=float, required=True, location='form')
+
     def get(self):
-        r = request.args.to_dict()
+        r = self.getParser.parse_args()
 
         conn = sql.connect(self.DBfile)
+        conn.row_factory = lambda c, r: dict(zip([col[0] for col in c.description], r))
         c = conn.cursor()
 
-        sLon, eLon = float(r['startLon']), float(r['endLon'])
-        sLat, eLat = float(r['startLat']), float(r['endLat'])
-
         query = c.execute(
-            '''SELECT * FROM stops 
-                INNER JOIN routes_stops ON stops.stop_id = routes_stops.stop_id
-                INNER JOIN routes ON routes_stops.route_id = routes.route_id
+            '''SELECT stop_id, name, lat, lon FROM stops
                 WHERE lon > ?
                 AND lon < ?
                 AND lat > ?
                 AND lat < ?''',
-            (sLon, eLon, sLat, eLat))
+            (r['startLon'], r['endLon'], r['startLat'], r['endLat']))
 
-        keys = ('stop_id', 'name', 'lon', 'lat')
+        data = query.fetchall()
+        print('Returned {} bus stops'.format(len(data)))
 
-        return {'data': [dict(zip(keys, i)) for i in query.fetchall()]}, 200
+        return {'data': data}, 200

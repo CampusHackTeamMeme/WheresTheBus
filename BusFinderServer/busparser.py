@@ -16,7 +16,7 @@ def create_stops_and_routes(conn):
     c.execute('''
     CREATE TABLE stops(
         stop_id TEXT PRIMARY KEY NOT NULL,
-        desc TEXT,
+        name TEXT,
         lat REAL,
         lon REAL
     )''')
@@ -100,7 +100,7 @@ def insert_stops(conn, stops_data):
         if count % 10 == 0:
             print("INSERTING STOPS %d/%d" % (count, stops_length), end="\r")
         c.execute(
-            'INSERT OR REPLACE INTO stops (stop_id, desc, lat, lon) VALUES (?,?,?,?)',
+            'INSERT OR REPLACE INTO stops (stop_id, name, lat, lon) VALUES (?,?,?,?)',
             (stop['id'], stop['label'], float(stop['lat']), float(stop['lon']))
         )
     print("%d STOPS INSERTED" % stops_length)
